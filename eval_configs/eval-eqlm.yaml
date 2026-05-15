@@ -1,0 +1,17 @@
+eval_name: eqlm-core
+eval_tasks: core
+precision: bf16
+device_batch_size: 32
+
+tasks:
+  core:
+    max_per_task: -1
+    seeds: [1234, 2345, 3456]
+
+# EQLM-only forward-solver overrides applied after checkpoint load.
+# Keys: solver, tol, max_iter, min_iter, anderson_m, anderson_beta,
+#       backward_tol, backward_max_iter, backward_min_iter, adjoint_grad_clip
+eval_solver:
+  tol: 1.0e-4
+  max_iter: 64
+  min_iter: 8

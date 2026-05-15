@@ -1,0 +1,55 @@
+==========================================
+SLURM_JOB_ID = 3460214
+SLURM_JOB_NODELIST = c03-06
+TMPDIR = /tmp/SLURM_3460214
+==========================================
+==========================================
+SLURM_JOB_ID = 3460214
+SLURM_JOB_NODELIST = c03-06
+==========================================
+/apps/spack/2406/apps/linux-rocky8-x86_64_v3/gcc-13.3.0/python-3.11.9-x74mtjf/bin/python
+NVIDIA H200 NVL, 143771 MiB, 0 MiB, 143157 MiB
+NVIDIA H200 NVL, 143771 MiB, 0 MiB, 143157 MiB
+NVIDIA H200 NVL, 143771 MiB, 0 MiB, 143157 MiB
+W0509 20:59:16.311000 1676055 site-packages/torch/distributed/run.py:803] 
+W0509 20:59:16.311000 1676055 site-packages/torch/distributed/run.py:803] *****************************************
+W0509 20:59:16.311000 1676055 site-packages/torch/distributed/run.py:803] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0509 20:59:16.311000 1676055 site-packages/torch/distributed/run.py:803] *****************************************
+[Sat May  9 20:59:20 2026] host=c03-06.hpc.usc.edu world=3
+  data_dir=/scratch1/feinashl/data/arc1concept-aug-1000  out_dir=/scratch1/feinashl/eqlm_sudoku/trm-deq-arc-30m
+  metadata: {'pad_id': 0, 'ignore_label_id': 0, 'blank_identifier_id': 0, 'vocab_size': 12, 'seq_len': 900, 'num_puzzle_identifiers': 876406, 'total_groups': 960, 'mean_puzzle_examples': 4.1458115825446, 'total_puzzles': 876405, 'sets': ['all']}
+TRMDEQ(
+  (inner): TRMDEQ_Inner(
+    (embed_tokens): CastedEmbedding()
+    (lm_head): CastedLinear()
+    (q_head): CastedLinear()
+    (puzzle_emb): CastedSparseEmbedding()
+    (rotary_emb): RotaryEmbedding()
+    (L_level): TinyRecursiveReasoningModel_ACTV1ReasoningModule(
+      (layers): ModuleList(
+        (0-7): 8 x TinyRecursiveReasoningModel_ACTV1Block(
+          (self_attn): Attention(
+            (qkv_proj): CastedLinear()
+            (o_proj): CastedLinear()
+          )
+          (mlp): SwiGLU(
+            (gate_up_proj): CastedLinear()
+            (down_proj): CastedLinear()
+          )
+        )
+      )
+    )
+    (inner_deq): _InnerDEQ()
+  )
+)
+  TRM-DEQ params: 27.276M
+  L_layers=8  H_cycles=3  DEQ inner: max_iter=8 min_iter=4 tol=0.001
+  bptt_through=2  jacobian_reg_lambda=0.001
+  halt_max_steps=16
+  ARC evaluator enabled: 400 test puzzles
+  total optim steps target = 2,072,905
+[Sat May  9 20:59:22 2026] Outer iter 0/10 (epoch=0)
+[rank2]:[W509 20:59:26.096033384 reducer.cpp:1431] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank0]:[W509 20:59:26.167840147 reducer.cpp:1431] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank1]:[W509 20:59:26.194193352 reducer.cpp:1431] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[2026-05-09T21:01:00.823] error: *** JOB 3460214 ON c03-06 CANCELLED AT 2026-05-09T21:01:00 DUE to SIGNAL Terminated ***

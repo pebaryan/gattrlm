@@ -1,0 +1,46 @@
+==========================================
+SLURM_JOB_ID = 3404575
+SLURM_JOB_NODELIST = c03-06
+TMPDIR = /tmp/SLURM_3404575
+==========================================
+/home1/feinashl/anaconda3/bin/python
+W0502 09:14:36.256000 728776 site-packages/torch/distributed/run.py:803] 
+W0502 09:14:36.256000 728776 site-packages/torch/distributed/run.py:803] *****************************************
+W0502 09:14:36.256000 728776 site-packages/torch/distributed/run.py:803] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0502 09:14:36.256000 728776 site-packages/torch/distributed/run.py:803] *****************************************
+[Sat May  2 09:14:39 2026] host=c03-06.hpc.usc.edu world=2
+  data_dir=/scratch1/feinashl/data/sudoku-extreme-1k-aug-1000  out_dir=/scratch1/feinashl/eqlm_sudoku/run-trm-deq-30m
+  metadata: {'pad_id': 0, 'ignore_label_id': 0, 'blank_identifier_id': 0, 'vocab_size': 11, 'seq_len': 81, 'num_puzzle_identifiers': 1, 'total_groups': 1000, 'mean_puzzle_examples': 1.0, 'total_puzzles': 1000, 'sets': ['all']}
+TRMDEQ(
+  (inner): TRMDEQ_Inner(
+    (embed_tokens): CastedEmbedding()
+    (lm_head): CastedLinear()
+    (q_head): CastedLinear()
+    (puzzle_emb): CastedSparseEmbedding()
+    (rotary_emb): RotaryEmbedding()
+    (L_level): TinyRecursiveReasoningModel_ACTV1ReasoningModule(
+      (layers): ModuleList(
+        (0-7): 8 x TinyRecursiveReasoningModel_ACTV1Block(
+          (self_attn): Attention(
+            (qkv_proj): CastedLinear()
+            (o_proj): CastedLinear()
+          )
+          (mlp): SwiGLU(
+            (gate_up_proj): CastedLinear()
+            (down_proj): CastedLinear()
+          )
+        )
+      )
+    )
+    (inner_deq): _InnerDEQ()
+  )
+)
+  TRM-DEQ params: 27.275M
+  L_layers=8  H_cycles=3  DEQ inner: max_iter=8 min_iter=4 tol=0.001
+  bptt_through=2  jacobian_reg_lambda=0.001
+  halt_max_steps=16
+  total optim steps target = 130,208
+[Sat May  2 09:14:40 2026] Outer iter 0/10 (epoch=0)
+  step=     50  lm_loss=2.5464  q_halt_loss=0.0067  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0003  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=40.36s eta=29h11m
+  step=    100  lm_loss=2.4774  q_halt_loss=0.0067  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0003  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=39.42s eta=28h50m
+[2026-05-02T09:16:42.408] error: *** JOB 3404575 ON c03-06 CANCELLED AT 2026-05-02T09:16:42 DUE to SIGNAL Terminated ***

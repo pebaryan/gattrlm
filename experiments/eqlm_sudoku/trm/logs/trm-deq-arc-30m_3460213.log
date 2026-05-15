@@ -1,0 +1,289 @@
+==========================================
+SLURM_JOB_ID = 3460213
+SLURM_JOB_NODELIST = c03-06
+TMPDIR = /tmp/SLURM_3460213
+==========================================
+==========================================
+SLURM_JOB_ID = 3460213
+SLURM_JOB_NODELIST = c03-06
+==========================================
+/apps/spack/2406/apps/linux-rocky8-x86_64_v3/gcc-13.3.0/python-3.11.9-x74mtjf/bin/python
+NVIDIA H200 NVL, 143771 MiB, 0 MiB, 143157 MiB
+NVIDIA H200 NVL, 143771 MiB, 0 MiB, 143157 MiB
+NVIDIA H200 NVL, 143771 MiB, 0 MiB, 143157 MiB
+W0509 20:57:35.559000 1675243 site-packages/torch/distributed/run.py:803] 
+W0509 20:57:35.559000 1675243 site-packages/torch/distributed/run.py:803] *****************************************
+W0509 20:57:35.559000 1675243 site-packages/torch/distributed/run.py:803] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0509 20:57:35.559000 1675243 site-packages/torch/distributed/run.py:803] *****************************************
+[Sat May  9 20:57:40 2026] host=c03-06.hpc.usc.edu world=3
+  data_dir=/scratch1/feinashl/data/arc1concept-aug-1000  out_dir=/scratch1/feinashl/eqlm_sudoku/trm-deq-arc-30m
+  metadata: {'pad_id': 0, 'ignore_label_id': 0, 'blank_identifier_id': 0, 'vocab_size': 12, 'seq_len': 900, 'num_puzzle_identifiers': 876406, 'total_groups': 960, 'mean_puzzle_examples': 4.1458115825446, 'total_puzzles': 876405, 'sets': ['all']}
+TRMDEQ(
+  (inner): TRMDEQ_Inner(
+    (embed_tokens): CastedEmbedding()
+    (lm_head): CastedLinear()
+    (q_head): CastedLinear()
+    (puzzle_emb): CastedSparseEmbedding()
+    (rotary_emb): RotaryEmbedding()
+    (L_level): TinyRecursiveReasoningModel_ACTV1ReasoningModule(
+      (layers): ModuleList(
+        (0-7): 8 x TinyRecursiveReasoningModel_ACTV1Block(
+          (self_attn): Attention(
+            (qkv_proj): CastedLinear()
+            (o_proj): CastedLinear()
+          )
+          (mlp): SwiGLU(
+            (gate_up_proj): CastedLinear()
+            (down_proj): CastedLinear()
+          )
+        )
+      )
+    )
+    (inner_deq): _InnerDEQ()
+  )
+)
+  TRM-DEQ params: 27.276M
+  L_layers=8  H_cycles=3  DEQ inner: max_iter=8 min_iter=4 tol=0.001
+  bptt_through=2  jacobian_reg_lambda=0.001
+  halt_max_steps=16
+  ARC evaluator enabled: 400 test puzzles
+  total optim steps target = 518,226
+[Sat May  9 20:57:47 2026] Outer iter 0/10 (epoch=0)
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank0]:   File "<frozen runpy>", line 88, in _run_code
+[rank0]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 459, in <module>
+[rank0]:     main(cfg)
+[rank0]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 393, in main
+[rank0]:     carry, reduced = _train_step(cfg, model, batch, carry, optimizers,
+[rank0]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 220, in _train_step
+[rank0]:     new_carry, loss, metrics, _, _ = model(carry=carry, batch=batch, return_keys=[])
+[rank0]:                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1661, in forward
+[rank0]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank0]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1487, in _run_ddp_forward
+[rank0]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/losses_deq.py", line 36, in forward
+[rank0]:     new_carry, outputs = self.model(**model_kwargs)
+[rank0]:                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 417, in forward
+[rank0]:     new_inner_carry, logits, (q_halt_logits, q_continue_logits) = self.inner(
+[rank0]:                                                                   ^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 357, in forward
+[rank0]:     z_L_star, _ = self.inner_deq(
+[rank0]:                   ^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 234, in forward
+[rank0]:     (Jt_v,) = torch.autograd.grad(s, z_in, create_graph=True)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/autograd/__init__.py", line 503, in grad
+[rank0]:     result = _engine_run_backward(
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+[rank0]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.40 GiB. GPU 0 has a total capacity of 139.80 GiB of which 5.98 GiB is free. Including non-PyTorch memory, this process has 133.81 GiB memory in use. Of the allocated memory 132.10 GiB is allocated by PyTorch, and 358.17 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank2]:   File "<frozen runpy>", line 88, in _run_code
+[rank2]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 459, in <module>
+[rank2]:     main(cfg)
+[rank2]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 393, in main
+[rank2]:     carry, reduced = _train_step(cfg, model, batch, carry, optimizers,
+[rank2]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 220, in _train_step
+[rank2]:     new_carry, loss, metrics, _, _ = model(carry=carry, batch=batch, return_keys=[])
+[rank2]:                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1661, in forward
+[rank2]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank2]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1487, in _run_ddp_forward
+[rank2]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/losses_deq.py", line 36, in forward
+[rank2]:     new_carry, outputs = self.model(**model_kwargs)
+[rank2]:                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 417, in forward
+[rank2]:     new_inner_carry, logits, (q_halt_logits, q_continue_logits) = self.inner(
+[rank2]:                                                                   ^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 357, in forward
+[rank2]:     z_L_star, _ = self.inner_deq(
+[rank2]:                   ^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 234, in forward
+[rank2]:     (Jt_v,) = torch.autograd.grad(s, z_in, create_graph=True)
+[rank2]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/autograd/__init__.py", line 503, in grad
+[rank2]:     result = _engine_run_backward(
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+[rank2]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.40 GiB. GPU 2 has a total capacity of 139.80 GiB of which 5.98 GiB is free. Including non-PyTorch memory, this process has 133.81 GiB memory in use. Of the allocated memory 132.10 GiB is allocated by PyTorch, and 358.17 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank1]:   File "<frozen runpy>", line 88, in _run_code
+[rank1]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 459, in <module>
+[rank1]:     main(cfg)
+[rank1]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 393, in main
+[rank1]:     carry, reduced = _train_step(cfg, model, batch, carry, optimizers,
+[rank1]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/train_trm_deq.py", line 220, in _train_step
+[rank1]:     new_carry, loss, metrics, _, _ = model(carry=carry, batch=batch, return_keys=[])
+[rank1]:                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1661, in forward
+[rank1]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank1]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/parallel/distributed.py", line 1487, in _run_ddp_forward
+[rank1]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/losses_deq.py", line 36, in forward
+[rank1]:     new_carry, outputs = self.model(**model_kwargs)
+[rank1]:                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 417, in forward
+[rank1]:     new_inner_carry, logits, (q_halt_logits, q_continue_logits) = self.inner(
+[rank1]:                                                                   ^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 357, in forward
+[rank1]:     z_L_star, _ = self.inner_deq(
+[rank1]:                   ^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/gpt/parcae/experiments/eqlm_sudoku/trm/trm_deq.py", line 234, in forward
+[rank1]:     (Jt_v,) = torch.autograd.grad(s, z_in, create_graph=True)
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/autograd/__init__.py", line 503, in grad
+[rank1]:     result = _engine_run_backward(
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+[rank1]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.40 GiB. GPU 1 has a total capacity of 139.80 GiB of which 5.98 GiB is free. Including non-PyTorch memory, this process has 133.81 GiB memory in use. Of the allocated memory 132.10 GiB is allocated by PyTorch, and 358.17 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank0]:[W509 20:57:59.251104277 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank2]:[W509 20:57:59.466575676 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())
+[rank0]:[W509 20:57:59.467413391 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())
+[rank1]:[W509 20:58:00.220409486 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())
+W0509 20:58:00.230000 1675243 site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 1675319 closing signal SIGTERM
+W0509 20:58:00.230000 1675243 site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 1675320 closing signal SIGTERM
+E0509 20:58:00.945000 1675243 site-packages/torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 1) local_rank: 0 (pid: 1675318) of binary: /home1/feinashl/anaconda3/bin/python
+Traceback (most recent call last):
+  File "/home1/feinashl/anaconda3/bin/torchrun", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/distributed/run.py", line 936, in main
+    run(args)
+  File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/distributed/run.py", line 927, in run
+    elastic_launch(
+  File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 156, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home1/feinashl/anaconda3/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 293, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+experiments.eqlm_sudoku.trm.train_trm_deq FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-05-09_20:58:00
+  host      : c03-06.hpc.usc.edu
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 1675318)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+[W509 20:58:01.084433000 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

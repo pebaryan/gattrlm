@@ -1,0 +1,172 @@
+==========================================
+SLURM_JOB_ID = 3404566
+SLURM_JOB_NODELIST = c03-06
+TMPDIR = /tmp/SLURM_3404566
+==========================================
+/home1/feinashl/anaconda3/bin/python
+W0502 08:30:38.310000 682683 site-packages/torch/distributed/run.py:803] 
+W0502 08:30:38.310000 682683 site-packages/torch/distributed/run.py:803] *****************************************
+W0502 08:30:38.310000 682683 site-packages/torch/distributed/run.py:803] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0502 08:30:38.310000 682683 site-packages/torch/distributed/run.py:803] *****************************************
+[Sat May  2 08:30:41 2026] host=c03-06.hpc.usc.edu world=2
+  variant=att  data_dir=/scratch1/feinashl/data/sudoku-extreme-1k-aug-1000
+  out_dir=/scratch1/feinashl/eqlm_sudoku/run-trm-att-7m
+  metadata: {'pad_id': 0, 'ignore_label_id': 0, 'blank_identifier_id': 0, 'vocab_size': 11, 'seq_len': 81, 'num_puzzle_identifiers': 1, 'total_groups': 1000, 'mean_puzzle_examples': 1.0, 'total_puzzles': 1000, 'sets': ['all']}
+TinyRecursiveReasoningModel_ACTV1(
+  (inner): TinyRecursiveReasoningModel_ACTV1_Inner(
+    (embed_tokens): CastedEmbedding()
+    (lm_head): CastedLinear()
+    (q_head): CastedLinear()
+    (puzzle_emb): CastedSparseEmbedding()
+    (rotary_emb): RotaryEmbedding()
+    (L_level): TinyRecursiveReasoningModel_ACTV1ReasoningModule(
+      (layers): ModuleList(
+        (0-1): 2 x TinyRecursiveReasoningModel_ACTV1Block(
+          (self_attn): Attention(
+            (qkv_proj): CastedLinear()
+            (o_proj): CastedLinear()
+          )
+          (mlp): SwiGLU(
+            (gate_up_proj): CastedLinear()
+            (down_proj): CastedLinear()
+          )
+        )
+      )
+    )
+  )
+)
+  TRM-att params: 6.828M
+  H_cycles=3 L_cycles=6  L_layers=2  halt_max_steps=16
+  total optim steps target = 65,104
+[Sat May  2 08:30:42 2026] Outer iter 0/10 (epoch=0)
+  step=     50  lm_loss=2.4726  q_halt_loss=0.0067  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=9.07s eta=3h16m
+  step=    100  lm_loss=2.3752  q_halt_loss=0.0066  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=3h06m
+  step=    150  lm_loss=2.1951  q_halt_loss=0.0061  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.12s eta=3h02m
+  step=    200  lm_loss=2.1701  q_halt_loss=0.0058  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=3h00m
+  step=    250  lm_loss=2.0091  q_halt_loss=0.0052  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.10s eta=2h59m
+  step=    300  lm_loss=1.8507  q_halt_loss=0.0047  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.10s eta=2h58m
+  step=    350  lm_loss=1.7155  q_halt_loss=0.0040  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.10s eta=2h57m
+  step=    400  lm_loss=1.6342  q_halt_loss=0.0035  exact_accuracy=0.0000  accuracy=0.4040  steps=16.0000  lr=0.0000  dt/50=8.11s eta=2h57m
+  step=    450  lm_loss=1.5632  q_halt_loss=0.0027  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h57m
+  step=    500  lm_loss=1.4982  q_halt_loss=0.0021  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h56m
+  step=    550  lm_loss=1.4591  q_halt_loss=0.0015  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h56m
+  step=    600  lm_loss=1.4363  q_halt_loss=0.0010  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h56m
+  step=    650  lm_loss=1.4215  q_halt_loss=0.0007  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h55m
+  step=    700  lm_loss=1.4083  q_halt_loss=0.0005  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h55m
+  step=    750  lm_loss=1.3972  q_halt_loss=0.0003  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h55m
+  step=    800  lm_loss=1.3785  q_halt_loss=0.0002  exact_accuracy=0.0000  accuracy=0.4474  steps=16.0000  lr=0.0000  dt/50=8.11s eta=2h55m
+  step=    850  lm_loss=1.3818  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h54m
+  step=    900  lm_loss=1.3578  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h54m
+  step=    950  lm_loss=1.3400  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h54m
+  step=   1000  lm_loss=1.3170  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0000  dt/50=8.11s eta=2h54m
+  step=   1050  lm_loss=1.2989  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h54m
+  step=   1100  lm_loss=1.2712  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h53m
+  step=   1150  lm_loss=1.2344  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h53m
+  step=   1200  lm_loss=1.2063  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.4844  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h53m
+  step=   1250  lm_loss=1.1996  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h53m
+  step=   1300  lm_loss=1.1786  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h53m
+  step=   1350  lm_loss=1.1549  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h53m
+  step=   1400  lm_loss=1.1346  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h52m
+  step=   1450  lm_loss=1.1139  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h52m
+  step=   1500  lm_loss=1.0962  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h52m
+  step=   1550  lm_loss=1.0763  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h52m
+  step=   1600  lm_loss=1.0648  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.5292  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h52m
+  step=   1650  lm_loss=1.0884  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h52m
+  step=   1700  lm_loss=1.0627  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h51m
+  step=   1750  lm_loss=1.0466  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h51m
+  step=   1800  lm_loss=1.0291  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h51m
+  step=   1850  lm_loss=1.0135  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h51m
+  step=   1900  lm_loss=0.9989  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h51m
+  step=   1950  lm_loss=0.9840  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h51m
+  step=   2000  lm_loss=0.9607  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.5728  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h51m
+  step=   2050  lm_loss=0.9956  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h50m
+  step=   2100  lm_loss=0.9780  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h50m
+  step=   2150  lm_loss=0.9615  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h50m
+  step=   2200  lm_loss=0.9444  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h50m
+  step=   2250  lm_loss=0.9337  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h50m
+  step=   2300  lm_loss=0.9080  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h50m
+  step=   2350  lm_loss=0.9086  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h50m
+  step=   2400  lm_loss=0.8809  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.6085  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h49m
+  step=   2450  lm_loss=0.9305  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h49m
+  step=   2500  lm_loss=0.9131  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h49m
+  step=   2550  lm_loss=0.9076  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h49m
+  step=   2600  lm_loss=0.8980  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h49m
+  step=   2650  lm_loss=0.8762  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h49m
+  step=   2700  lm_loss=0.8609  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h49m
+  step=   2750  lm_loss=0.8433  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h48m
+  step=   2800  lm_loss=0.8397  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.6256  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h48m
+  step=   2850  lm_loss=0.8975  q_halt_loss=0.0055  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h48m
+  step=   2900  lm_loss=0.8759  q_halt_loss=0.0125  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h48m
+  step=   2950  lm_loss=0.8660  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h48m
+  step=   3000  lm_loss=0.8552  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h48m
+  step=   3050  lm_loss=0.8498  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h48m
+  step=   3100  lm_loss=0.8347  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h47m
+  step=   3150  lm_loss=0.8187  q_halt_loss=0.0074  exact_accuracy=0.0000  accuracy=0.5556  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h47m
+  step=   3200  lm_loss=0.8067  q_halt_loss=0.0219  exact_accuracy=0.0054  accuracy=0.6421  steps=15.9823  lr=0.0001  dt/50=8.11s eta=2h47m
+  step=   3250  lm_loss=0.8746  q_halt_loss=0.0080  exact_accuracy=0.0000  accuracy=0.5926  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h47m
+  step=   3300  lm_loss=0.8576  q_halt_loss=0.0049  exact_accuracy=0.0000  accuracy=0.0000  steps=0.0000  lr=0.0001  dt/50=8.11s eta=2h47m
+  step=   3350  lm_loss=0.8458  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.6580  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h47m
+  step=   3400  lm_loss=0.8339  q_halt_loss=0.0037  exact_accuracy=0.0000  accuracy=0.6269  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h47m
+  step=   3450  lm_loss=0.8284  q_halt_loss=0.0007  exact_accuracy=0.0000  accuracy=0.6049  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h46m
+  step=   3500  lm_loss=0.8228  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.6469  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h46m
+  step=   3550  lm_loss=0.7985  q_halt_loss=0.0199  exact_accuracy=0.0000  accuracy=0.6790  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h46m
+  step=   3600  lm_loss=0.7959  q_halt_loss=0.0019  exact_accuracy=0.0016  accuracy=0.6483  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h46m
+  step=   3650  lm_loss=0.8378  q_halt_loss=0.0094  exact_accuracy=0.0000  accuracy=0.7446  steps=13.3750  lr=0.0001  dt/50=8.11s eta=2h46m
+  step=   3700  lm_loss=0.8189  q_halt_loss=0.0041  exact_accuracy=0.1667  accuracy=0.6934  steps=13.6667  lr=0.0001  dt/50=8.11s eta=2h46m
+  step=   3750  lm_loss=0.8196  q_halt_loss=0.0019  exact_accuracy=0.0000  accuracy=0.6794  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h46m
+  step=   3800  lm_loss=0.8143  q_halt_loss=0.0048  exact_accuracy=0.0000  accuracy=0.6718  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   3850  lm_loss=0.7960  q_halt_loss=0.0088  exact_accuracy=0.1176  accuracy=0.7298  steps=15.2941  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   3900  lm_loss=0.7919  q_halt_loss=0.0015  exact_accuracy=0.0000  accuracy=0.6649  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   3950  lm_loss=0.7788  q_halt_loss=0.0060  exact_accuracy=0.0000  accuracy=0.6926  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   4000  lm_loss=0.7804  q_halt_loss=0.0002  exact_accuracy=0.0000  accuracy=0.6543  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   4050  lm_loss=0.8006  q_halt_loss=0.0069  exact_accuracy=0.0000  accuracy=0.6717  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   4100  lm_loss=0.8030  q_halt_loss=0.0168  exact_accuracy=0.0000  accuracy=0.6667  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   4150  lm_loss=0.8058  q_halt_loss=0.0074  exact_accuracy=0.0000  accuracy=0.6559  steps=15.5641  lr=0.0001  dt/50=8.11s eta=2h45m
+  step=   4200  lm_loss=0.7907  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.6730  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h44m
+  step=   4250  lm_loss=0.7903  q_halt_loss=0.0031  exact_accuracy=0.0500  accuracy=0.7191  steps=14.7000  lr=0.0001  dt/50=8.11s eta=2h44m
+  step=   4300  lm_loss=0.7906  q_halt_loss=0.0075  exact_accuracy=0.0000  accuracy=0.6898  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h44m
+  step=   4350  lm_loss=0.7833  q_halt_loss=0.0003  exact_accuracy=0.0000  accuracy=0.6968  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h44m
+  step=   4400  lm_loss=0.7658  q_halt_loss=0.0003  exact_accuracy=0.0000  accuracy=0.6681  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h44m
+  step=   4450  lm_loss=0.7867  q_halt_loss=0.0033  exact_accuracy=0.0000  accuracy=0.6728  steps=15.2222  lr=0.0001  dt/50=8.11s eta=2h44m
+  step=   4500  lm_loss=0.7844  q_halt_loss=0.0030  exact_accuracy=0.0217  accuracy=0.6653  steps=15.6957  lr=0.0001  dt/50=8.11s eta=2h44m
+  step=   4550  lm_loss=0.7810  q_halt_loss=0.0041  exact_accuracy=0.0408  accuracy=0.7213  steps=15.7347  lr=0.0001  dt/50=8.11s eta=2h43m
+  step=   4600  lm_loss=0.7846  q_halt_loss=0.0023  exact_accuracy=0.0000  accuracy=0.6818  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h43m
+  step=   4650  lm_loss=0.7706  q_halt_loss=0.0037  exact_accuracy=0.0435  accuracy=0.7013  steps=15.4130  lr=0.0001  dt/50=8.11s eta=2h43m
+  step=   4700  lm_loss=0.7762  q_halt_loss=0.0072  exact_accuracy=0.0000  accuracy=0.6728  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h43m
+  step=   4750  lm_loss=0.7684  q_halt_loss=0.0012  exact_accuracy=0.0000  accuracy=0.6695  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h43m
+  step=   4800  lm_loss=0.7626  q_halt_loss=0.0020  exact_accuracy=0.0067  accuracy=0.6766  steps=15.8133  lr=0.0001  dt/50=8.11s eta=2h43m
+  step=   4850  lm_loss=0.7646  q_halt_loss=0.0012  exact_accuracy=0.0000  accuracy=0.6961  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h43m
+  step=   4900  lm_loss=0.7727  q_halt_loss=0.0042  exact_accuracy=0.0159  accuracy=0.6888  steps=15.8095  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   4950  lm_loss=0.7727  q_halt_loss=0.0030  exact_accuracy=0.0192  accuracy=0.6854  steps=15.4808  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   5000  lm_loss=0.7755  q_halt_loss=0.0009  exact_accuracy=0.0213  accuracy=0.6874  steps=15.7234  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   5050  lm_loss=0.7691  q_halt_loss=0.0174  exact_accuracy=0.0192  accuracy=0.7123  steps=15.4615  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   5100  lm_loss=0.7687  q_halt_loss=0.0012  exact_accuracy=0.0179  accuracy=0.6876  steps=15.7679  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   5150  lm_loss=0.7609  q_halt_loss=0.0018  exact_accuracy=0.0270  accuracy=0.7010  steps=15.6757  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   5200  lm_loss=0.7479  q_halt_loss=0.0003  exact_accuracy=0.0000  accuracy=0.6828  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   5250  lm_loss=0.7631  q_halt_loss=0.0060  exact_accuracy=0.0000  accuracy=0.6836  steps=15.6316  lr=0.0001  dt/50=8.11s eta=2h42m
+  step=   5300  lm_loss=0.7590  q_halt_loss=0.0064  exact_accuracy=0.0294  accuracy=0.7124  steps=15.3824  lr=0.0001  dt/50=8.11s eta=2h41m
+  step=   5350  lm_loss=0.7493  q_halt_loss=0.0093  exact_accuracy=0.0000  accuracy=0.6890  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h41m
+  step=   5400  lm_loss=0.7700  q_halt_loss=0.0016  exact_accuracy=0.0196  accuracy=0.6926  steps=15.7647  lr=0.0001  dt/50=8.11s eta=2h41m
+  step=   5450  lm_loss=0.7440  q_halt_loss=0.0008  exact_accuracy=0.0370  accuracy=0.7046  steps=15.5000  lr=0.0001  dt/50=8.11s eta=2h41m
+  step=   5500  lm_loss=0.7556  q_halt_loss=0.0014  exact_accuracy=0.0755  accuracy=0.7303  steps=15.0189  lr=0.0001  dt/50=8.11s eta=2h41m
+  step=   5550  lm_loss=0.7317  q_halt_loss=0.0064  exact_accuracy=0.0000  accuracy=0.6861  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h41m
+  step=   5600  lm_loss=0.7607  q_halt_loss=0.0028  exact_accuracy=0.0120  accuracy=0.6917  steps=15.8434  lr=0.0001  dt/50=8.11s eta=2h41m
+  step=   5650  lm_loss=0.7430  q_halt_loss=0.0016  exact_accuracy=0.0000  accuracy=0.6900  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h40m
+  step=   5700  lm_loss=0.7409  q_halt_loss=0.0005  exact_accuracy=0.0345  accuracy=0.7009  steps=15.5172  lr=0.0001  dt/50=8.11s eta=2h40m
+  step=   5750  lm_loss=0.7448  q_halt_loss=0.0080  exact_accuracy=0.0000  accuracy=0.6982  steps=15.7308  lr=0.0001  dt/50=8.11s eta=2h40m
+  step=   5800  lm_loss=0.7430  q_halt_loss=0.0021  exact_accuracy=0.0833  accuracy=0.6975  steps=15.1042  lr=0.0001  dt/50=8.11s eta=2h40m
+  step=   5850  lm_loss=0.7527  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.6901  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h40m
+  step=   5900  lm_loss=0.7457  q_halt_loss=0.0171  exact_accuracy=0.0200  accuracy=0.6931  steps=15.7200  lr=0.0001  dt/50=8.11s eta=2h40m
+  step=   5950  lm_loss=0.7496  q_halt_loss=0.0016  exact_accuracy=0.0000  accuracy=0.7043  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h40m
+  step=   6000  lm_loss=0.7489  q_halt_loss=0.0047  exact_accuracy=0.0317  accuracy=0.7064  steps=15.7778  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6050  lm_loss=0.7564  q_halt_loss=0.0047  exact_accuracy=0.0444  accuracy=0.7007  steps=15.6889  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6100  lm_loss=0.7495  q_halt_loss=0.0110  exact_accuracy=0.0179  accuracy=0.6874  steps=15.7500  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6150  lm_loss=0.7455  q_halt_loss=0.0047  exact_accuracy=0.0577  accuracy=0.7191  steps=14.9615  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6200  lm_loss=0.7414  q_halt_loss=0.0071  exact_accuracy=0.0172  accuracy=0.7052  steps=15.7414  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6250  lm_loss=0.7418  q_halt_loss=0.0004  exact_accuracy=0.0000  accuracy=0.6681  steps=16.0000  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6300  lm_loss=0.7303  q_halt_loss=0.0083  exact_accuracy=0.0784  accuracy=0.7371  steps=15.1176  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6350  lm_loss=0.7381  q_halt_loss=0.0048  exact_accuracy=0.0000  accuracy=0.6884  steps=15.6667  lr=0.0001  dt/50=8.11s eta=2h39m
+  step=   6400  lm_loss=0.7347  q_halt_loss=0.0066  exact_accuracy=0.0615  accuracy=0.7179  steps=15.3231  lr=0.0001  dt/50=8.11s eta=2h38m
+  step=   6450  lm_loss=0.7556  q_halt_loss=0.0107  exact_accuracy=0.0000  accuracy=0.6997  steps=15.7455  lr=0.0001  dt/50=8.11s eta=2h38m
+  step=   6500  lm_loss=0.7393  q_halt_loss=0.0122  exact_accuracy=0.0370  accuracy=0.7273  steps=15.4815  lr=0.0001  dt/50=8.11s eta=2h38m
+[2026-05-02T08:56:31.739] error: *** JOB 3404566 ON c03-06 CANCELLED AT 2026-05-02T08:56:31 DUE to SIGNAL Terminated ***

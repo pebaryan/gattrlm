@@ -1,0 +1,306 @@
+==========================================
+SLURM_JOB_ID = 3404920
+SLURM_JOB_NODELIST = c03-06
+TMPDIR = /tmp/SLURM_3404920
+==========================================
+/home1/feinashl/anaconda3/bin/python
+W0502 15:52:40.261000 1133053 site-packages/torch/distributed/run.py:803] 
+W0502 15:52:40.261000 1133053 site-packages/torch/distributed/run.py:803] *****************************************
+W0502 15:52:40.261000 1133053 site-packages/torch/distributed/run.py:803] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0502 15:52:40.261000 1133053 site-packages/torch/distributed/run.py:803] *****************************************
+[Sat May  2 15:52:43 2026] host=c03-06.hpc.usc.edu world=2
+  data_dir=/scratch1/feinashl/data/sudoku-extreme-1k-aug-1000  out_dir=/scratch1/feinashl/eqlm_sudoku/run-trm-deq-30m
+  metadata: {'pad_id': 0, 'ignore_label_id': 0, 'blank_identifier_id': 0, 'vocab_size': 11, 'seq_len': 81, 'num_puzzle_identifiers': 1, 'total_groups': 1000, 'mean_puzzle_examples': 1.0, 'total_puzzles': 1000, 'sets': ['all']}
+TRMDEQ(
+  (inner): TRMDEQ_Inner(
+    (embed_tokens): CastedEmbedding()
+    (lm_head): CastedLinear()
+    (q_head): CastedLinear()
+    (puzzle_emb): CastedSparseEmbedding()
+    (rotary_emb): RotaryEmbedding()
+    (L_level): TinyRecursiveReasoningModel_ACTV1ReasoningModule(
+      (layers): ModuleList(
+        (0-7): 8 x TinyRecursiveReasoningModel_ACTV1Block(
+          (self_attn): Attention(
+            (qkv_proj): CastedLinear()
+            (o_proj): CastedLinear()
+          )
+          (mlp): SwiGLU(
+            (gate_up_proj): CastedLinear()
+            (down_proj): CastedLinear()
+          )
+        )
+      )
+    )
+    (inner_deq): _InnerDEQ()
+  )
+)
+  TRM-DEQ params: 27.275M
+  L_layers=8  H_cycles=3  DEQ inner: max_iter=8 min_iter=4 tol=0.001
+  bptt_through=2  jacobian_reg_lambda=0.0
+  halt_max_steps=16
+  total optim steps target = 130,208
+[Sat May  2 15:52:44 2026] Outer iter 0/10 (epoch=0)
+[rank1]:[W502 15:52:49.719742607 reducer.cpp:1431] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank0]:[W502 15:52:49.822062008 reducer.cpp:1431] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+  step=     50  lm_loss=2.5177  q_halt_loss=0.0067  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=38.90s eta=28h07m
+  step=    100  lm_loss=2.2451  q_halt_loss=0.0063  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=30.21s eta=24h58m
+  step=    150  lm_loss=2.2051  q_halt_loss=0.0056  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0510  lr=0.0000  dt/50=41.03s eta=26h31m
+  step=    200  lm_loss=2.2029  q_halt_loss=0.0048  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0070  lr=0.0000  dt/50=45.03s eta=28h01m
+  step=    250  lm_loss=2.2010  q_halt_loss=0.0040  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0035  lr=0.0000  dt/50=45.17s eta=28h55m
+  step=    300  lm_loss=2.2002  q_halt_loss=0.0032  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0036  lr=0.0000  dt/50=34.92s eta=28h17m
+  step=    350  lm_loss=2.1948  q_halt_loss=0.0026  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=35.26s eta=27h52m
+  step=    400  lm_loss=2.1087  q_halt_loss=0.0023  exact_accuracy=0.0000  accuracy=0.1519  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=33.37s eta=27h23m
+  step=    450  lm_loss=2.0159  q_halt_loss=0.0017  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=10.9609  lr=0.0000  dt/50=40.60s eta=27h35m
+  step=    500  lm_loss=1.9923  q_halt_loss=0.0011  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0539  lr=0.0000  dt/50=44.93s eta=28h03m
+  step=    550  lm_loss=1.9433  q_halt_loss=0.0010  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0066  lr=0.0000  dt/50=43.15s eta=28h19m
+  step=    600  lm_loss=1.8526  q_halt_loss=0.0012  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0155  lr=0.0000  dt/50=41.38s eta=28h26m
+  step=    650  lm_loss=1.7808  q_halt_loss=0.0014  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0077  lr=0.0000  dt/50=39.75s eta=28h26m
+  step=    700  lm_loss=1.7140  q_halt_loss=0.0006  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0067  lr=0.0000  dt/50=42.39s eta=28h34m
+  step=    750  lm_loss=1.6560  q_halt_loss=0.0004  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=42.58s eta=28h42m
+  step=    800  lm_loss=1.5099  q_halt_loss=0.0003  exact_accuracy=0.0000  accuracy=0.4235  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=38.65s eta=28h38m
+  step=    850  lm_loss=1.4521  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0071  lr=0.0000  dt/50=44.37s eta=28h49m
+  step=    900  lm_loss=1.4279  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0096  lr=0.0000  dt/50=45.25s eta=29h00m
+  step=    950  lm_loss=1.4733  q_halt_loss=0.0002  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0513  lr=0.0000  dt/50=44.85s eta=29h10m
+  step=   1000  lm_loss=1.4038  q_halt_loss=0.0002  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0000  dt/50=44.51s eta=29h17m
+  step=   1050  lm_loss=1.3615  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0013  lr=0.0001  dt/50=43.79s eta=29h23m
+  step=   1100  lm_loss=1.3319  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0018  lr=0.0001  dt/50=45.19s eta=29h30m
+  step=   1150  lm_loss=1.2931  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0068  lr=0.0001  dt/50=45.53s eta=29h38m
+  step=   1200  lm_loss=1.2135  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.4895  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0093  lr=0.0001  dt/50=44.93s eta=29h44m
+  step=   1250  lm_loss=1.1878  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0115  lr=0.0001  dt/50=44.93s eta=29h49m
+  step=   1300  lm_loss=1.1371  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0084  lr=0.0001  dt/50=45.14s eta=29h54m
+  step=   1350  lm_loss=1.1059  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0014  lr=0.0001  dt/50=44.98s eta=29h58m
+  step=   1400  lm_loss=1.0662  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0016  lr=0.0001  dt/50=45.35s eta=30h03m
+  step=   1450  lm_loss=1.0301  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0598  lr=0.0001  dt/50=45.04s eta=30h07m
+  step=   1500  lm_loss=0.9976  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0012  lr=0.0001  dt/50=44.36s eta=30h09m
+  step=   1550  lm_loss=0.9416  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0110  lr=0.0001  dt/50=45.37s eta=30h13m
+  step=   1600  lm_loss=0.9348  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.5957  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0909  lr=0.0001  dt/50=45.36s eta=30h16m
+  step=   1650  lm_loss=0.9819  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0024  lr=0.0001  dt/50=45.16s eta=30h19m
+  step=   1700  lm_loss=0.9597  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=7.0000  deq_resid=1.0000  lr=0.0001  dt/50=42.37s eta=30h18m
+  step=   1750  lm_loss=0.9189  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0043  lr=0.0001  dt/50=45.03s eta=30h21m
+  step=   1800  lm_loss=0.8702  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0012  lr=0.0001  dt/50=45.35s eta=30h24m
+  step=   1850  lm_loss=0.8429  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0061  lr=0.0001  dt/50=45.27s eta=30h26m
+  step=   1900  lm_loss=0.8051  q_halt_loss=0.0256  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0608  lr=0.0001  dt/50=45.44s eta=30h28m
+  step=   1950  lm_loss=0.7781  q_halt_loss=0.0159  exact_accuracy=1.0000  accuracy=1.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0030  lr=0.0001  dt/50=45.02s eta=30h30m
+  step=   2000  lm_loss=0.8877  q_halt_loss=0.0179  exact_accuracy=0.0027  accuracy=0.6375  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.3557  lr=0.0001  dt/50=44.10s eta=30h31m
+  step=   2050  lm_loss=1.0823  q_halt_loss=0.0006  exact_accuracy=0.0000  accuracy=0.6235  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.6182  lr=0.0001  dt/50=40.92s eta=30h28m
+  step=   2100  lm_loss=0.8947  q_halt_loss=0.0178  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0400  lr=0.0001  dt/50=40.37s eta=30h25m
+  step=   2150  lm_loss=0.8666  q_halt_loss=0.0299  exact_accuracy=0.8000  accuracy=0.9901  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0160  lr=0.0001  dt/50=39.06s eta=30h20m
+  step=   2200  lm_loss=0.8139  q_halt_loss=0.0790  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0404  lr=0.0001  dt/50=44.07s eta=30h21m
+  step=   2250  lm_loss=0.7960  q_halt_loss=0.0002  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0071  lr=0.0001  dt/50=43.27s eta=30h21m
+  step=   2300  lm_loss=0.7845  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.0000  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0023  lr=0.0001  dt/50=43.02s eta=30h21m
+  step=   2350  lm_loss=0.7899  q_halt_loss=0.0003  exact_accuracy=0.0000  accuracy=0.6543  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0085  lr=0.0001  dt/50=41.60s eta=30h19m
+  step=   2400  lm_loss=0.7155  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.7126  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0135  lr=0.0001  dt/50=41.66s eta=30h17m
+  step=   2450  lm_loss=0.8137  q_halt_loss=0.0552  exact_accuracy=0.0000  accuracy=0.7055  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0297  lr=0.0001  dt/50=41.00s eta=30h15m
+  step=   2500  lm_loss=0.7937  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.7226  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.3744  lr=0.0001  dt/50=39.54s eta=30h12m
+  step=   2550  lm_loss=0.7957  q_halt_loss=0.0001  exact_accuracy=0.0000  accuracy=0.7207  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.4532  lr=0.0001  dt/50=40.15s eta=30h09m
+  step=   2600  lm_loss=0.7895  q_halt_loss=0.0009  exact_accuracy=0.0000  accuracy=0.7358  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0948  lr=0.0001  dt/50=39.97s eta=30h06m
+  step=   2650  lm_loss=0.7531  q_halt_loss=0.0014  exact_accuracy=0.2000  accuracy=0.8593  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0697  lr=0.0001  dt/50=38.92s eta=30h03m
+  step=   2700  lm_loss=0.7332  q_halt_loss=0.0008  exact_accuracy=0.0000  accuracy=0.7654  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=38.81s eta=29h59m
+  step=   2750  lm_loss=0.7453  q_halt_loss=0.0026  exact_accuracy=0.0000  accuracy=0.7086  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.7304  lr=0.0001  dt/50=38.55s eta=29h55m
+  step=   2800  lm_loss=0.7421  q_halt_loss=0.0004  exact_accuracy=0.0000  accuracy=0.6936  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.9602  lr=0.0001  dt/50=37.51s eta=29h51m
+  step=   2850  lm_loss=0.7643  q_halt_loss=0.0007  exact_accuracy=0.0323  accuracy=0.7252  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.1087  lr=0.0001  dt/50=38.10s eta=29h47m
+  step=   2900  lm_loss=0.7593  q_halt_loss=0.0051  exact_accuracy=0.0833  accuracy=0.7459  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=2.0223  lr=0.0001  dt/50=38.74s eta=29h44m
+  step=   2950  lm_loss=0.7549  q_halt_loss=0.0011  exact_accuracy=0.0000  accuracy=0.7531  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0448  lr=0.0001  dt/50=37.76s eta=29h40m
+  step=   3000  lm_loss=0.7501  q_halt_loss=0.0006  exact_accuracy=0.0588  accuracy=0.7262  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.2137  lr=0.0001  dt/50=37.22s eta=29h36m
+  step=   3050  lm_loss=0.7382  q_halt_loss=0.0024  exact_accuracy=0.0000  accuracy=0.7099  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.0633  lr=0.0001  dt/50=36.80s eta=29h32m
+  step=   3100  lm_loss=0.7059  q_halt_loss=0.0127  exact_accuracy=0.0667  accuracy=0.7720  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.6917  lr=0.0001  dt/50=36.97s eta=29h28m
+  step=   3150  lm_loss=0.7404  q_halt_loss=0.0153  exact_accuracy=0.0000  accuracy=0.7467  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.3515  lr=0.0001  dt/50=36.08s eta=29h24m
+  step=   3200  lm_loss=0.7295  q_halt_loss=0.0347  exact_accuracy=0.0435  accuracy=0.7142  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.2003  lr=0.0001  dt/50=35.76s eta=29h19m
+  step=   3250  lm_loss=0.7442  q_halt_loss=0.0184  exact_accuracy=0.1290  accuracy=0.7595  jacobian_reg=0.0000  deq_iters=7.0000  deq_resid=1.0000  lr=0.0001  dt/50=35.72s eta=29h14m
+  step=   3300  lm_loss=0.7763  q_halt_loss=0.0141  exact_accuracy=0.2667  accuracy=0.8066  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.8538  lr=0.0001  dt/50=35.74s eta=29h10m
+  step=   3350  lm_loss=0.7319  q_halt_loss=0.0178  exact_accuracy=0.0476  accuracy=0.7143  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=35.46s eta=29h06m
+  step=   3400  lm_loss=0.7030  q_halt_loss=0.0022  exact_accuracy=0.0476  accuracy=0.7319  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.2572  lr=0.0001  dt/50=35.81s eta=29h02m
+  step=   3450  lm_loss=0.7188  q_halt_loss=0.0530  exact_accuracy=0.0000  accuracy=0.7400  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.2304  lr=0.0001  dt/50=35.56s eta=28h57m
+  step=   3500  lm_loss=0.7193  q_halt_loss=0.0221  exact_accuracy=0.0400  accuracy=0.7205  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=6.0713  lr=0.0001  dt/50=34.99s eta=28h53m
+  step=   3550  lm_loss=0.7385  q_halt_loss=0.0053  exact_accuracy=0.1111  accuracy=0.7236  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.8236  lr=0.0001  dt/50=35.75s eta=28h49m
+  step=   3600  lm_loss=0.7058  q_halt_loss=0.0482  exact_accuracy=0.0909  accuracy=0.7520  jacobian_reg=0.0000  deq_iters=7.0000  deq_resid=1.0000  lr=0.0001  dt/50=35.03s eta=28h45m
+  step=   3650  lm_loss=0.7332  q_halt_loss=0.0205  exact_accuracy=0.0541  accuracy=0.7150  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=34.90s eta=28h41m
+  step=   3700  lm_loss=0.7408  q_halt_loss=0.0095  exact_accuracy=0.1250  accuracy=0.7536  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.1108  lr=0.0001  dt/50=33.63s eta=28h36m
+  step=   3750  lm_loss=0.7289  q_halt_loss=0.0092  exact_accuracy=0.0476  accuracy=0.7302  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=34.49s eta=28h32m
+  step=   3800  lm_loss=0.7491  q_halt_loss=0.0012  exact_accuracy=0.0357  accuracy=0.6874  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.2292  lr=0.0001  dt/50=35.02s eta=28h28m
+  step=   3850  lm_loss=0.7270  q_halt_loss=0.0019  exact_accuracy=0.1538  accuracy=0.7816  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=5.3203  lr=0.0001  dt/50=33.72s eta=28h24m
+  step=   3900  lm_loss=0.7024  q_halt_loss=0.0184  exact_accuracy=0.1667  accuracy=0.8018  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.4802  lr=0.0001  dt/50=34.79s eta=28h20m
+  step=   3950  lm_loss=0.7237  q_halt_loss=0.0214  exact_accuracy=0.0426  accuracy=0.7184  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.8959  lr=0.0001  dt/50=33.39s eta=28h16m
+  step=   4000  lm_loss=0.7167  q_halt_loss=0.0238  exact_accuracy=0.1600  accuracy=0.7220  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=34.26s eta=28h12m
+  step=   4050  lm_loss=0.6962  q_halt_loss=0.0168  exact_accuracy=0.0426  accuracy=0.7410  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=34.06s eta=28h08m
+  step=   4100  lm_loss=0.7364  q_halt_loss=0.0142  exact_accuracy=0.0000  accuracy=0.7175  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=33.64s eta=28h04m
+  step=   4150  lm_loss=0.7481  q_halt_loss=0.0048  exact_accuracy=0.0833  accuracy=0.7212  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=33.47s eta=28h00m
+  step=   4200  lm_loss=0.7274  q_halt_loss=0.0073  exact_accuracy=0.0690  accuracy=0.7531  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=34.40s eta=27h56m
+  step=   4250  lm_loss=0.7290  q_halt_loss=0.0172  exact_accuracy=0.4667  accuracy=0.8889  jacobian_reg=0.0000  deq_iters=7.0000  deq_resid=1.0000  lr=0.0001  dt/50=33.72s eta=27h53m
+  step=   4300  lm_loss=0.7071  q_halt_loss=0.0351  exact_accuracy=0.2059  accuracy=0.7560  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.90s eta=27h49m
+  step=   4350  lm_loss=0.7503  q_halt_loss=0.0013  exact_accuracy=0.0500  accuracy=0.7272  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=33.90s eta=27h45m
+  step=   4400  lm_loss=0.7205  q_halt_loss=0.0285  exact_accuracy=0.0667  accuracy=0.6798  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=33.44s eta=27h42m
+  step=   4450  lm_loss=0.7284  q_halt_loss=0.0154  exact_accuracy=0.0769  accuracy=0.7123  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=2.2740  lr=0.0001  dt/50=33.02s eta=27h38m
+  step=   4500  lm_loss=0.7545  q_halt_loss=0.0169  exact_accuracy=0.0000  accuracy=0.6962  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=33.10s eta=27h34m
+  step=   4550  lm_loss=0.7229  q_halt_loss=0.0168  exact_accuracy=0.0000  accuracy=0.7370  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=33.44s eta=27h31m
+  step=   4600  lm_loss=0.7305  q_halt_loss=0.0018  exact_accuracy=0.0370  accuracy=0.7170  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.07s eta=27h27m
+  step=   4650  lm_loss=0.7403  q_halt_loss=0.0033  exact_accuracy=0.1739  accuracy=0.7563  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.30s eta=27h23m
+  step=   4700  lm_loss=0.7533  q_halt_loss=0.0003  exact_accuracy=0.0000  accuracy=0.6871  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.53s eta=27h19m
+  step=   4750  lm_loss=0.7474  q_halt_loss=0.0024  exact_accuracy=0.2727  accuracy=0.7778  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.45s eta=27h15m
+  step=   4800  lm_loss=0.7552  q_halt_loss=0.0003  exact_accuracy=0.0417  accuracy=0.7016  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=1.7666  lr=0.0001  dt/50=32.04s eta=27h11m
+  step=   4850  lm_loss=0.7309  q_halt_loss=0.0018  exact_accuracy=0.0968  accuracy=0.7228  jacobian_reg=0.0000  deq_iters=7.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.60s eta=27h07m
+  step=   4900  lm_loss=0.7478  q_halt_loss=0.0009  exact_accuracy=0.0909  accuracy=0.7458  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.93s eta=27h04m
+  step=   4950  lm_loss=0.7332  q_halt_loss=0.0121  exact_accuracy=0.2424  accuracy=0.7868  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.78s eta=27h00m
+  step=   5000  lm_loss=0.7514  q_halt_loss=0.0043  exact_accuracy=0.0278  accuracy=0.6948  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.35s eta=26h57m
+  step=   5050  lm_loss=0.7270  q_halt_loss=0.0163  exact_accuracy=0.2500  accuracy=0.8012  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.12s eta=26h53m
+  step=   5100  lm_loss=0.7317  q_halt_loss=0.0285  exact_accuracy=0.3143  accuracy=0.8014  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.91s eta=26h50m
+  step=   5150  lm_loss=0.6949  q_halt_loss=0.0619  exact_accuracy=0.4074  accuracy=0.8162  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=0.7679  lr=0.0001  dt/50=33.07s eta=26h47m
+  step=   5200  lm_loss=0.7194  q_halt_loss=0.0153  exact_accuracy=0.0000  accuracy=0.7232  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.49s eta=26h43m
+  step=   5250  lm_loss=0.7284  q_halt_loss=0.0015  exact_accuracy=0.0811  accuracy=0.7354  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.82s eta=26h40m
+  step=   5300  lm_loss=0.7354  q_halt_loss=0.0026  exact_accuracy=0.1200  accuracy=0.7363  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.82s eta=26h36m
+  step=   5350  lm_loss=0.7267  q_halt_loss=0.0044  exact_accuracy=0.3125  accuracy=0.8002  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.39s eta=26h33m
+  step=   5400  lm_loss=0.7221  q_halt_loss=0.0163  exact_accuracy=0.2000  accuracy=0.7920  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.66s eta=26h31m
+  step=   5450  lm_loss=0.7343  q_halt_loss=0.0182  exact_accuracy=0.0000  accuracy=0.7407  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.77s eta=26h28m
+  step=   5500  lm_loss=0.7258  q_halt_loss=0.0011  exact_accuracy=0.2105  accuracy=0.7719  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=12.6330  lr=0.0001  dt/50=31.26s eta=26h24m
+  step=   5550  lm_loss=0.7279  q_halt_loss=0.0149  exact_accuracy=0.0417  accuracy=0.6914  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=32.21s eta=26h21m
+  step=   5600  lm_loss=0.6999  q_halt_loss=0.0115  exact_accuracy=0.2353  accuracy=0.7715  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.29s eta=26h18m
+  step=   5650  lm_loss=0.7177  q_halt_loss=0.0078  exact_accuracy=0.0952  accuracy=0.7443  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.33s eta=26h15m
+  step=   5700  lm_loss=0.7288  q_halt_loss=0.0148  exact_accuracy=0.2727  accuracy=0.7738  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.39s eta=26h12m
+  step=   5750  lm_loss=0.7540  q_halt_loss=0.0039  exact_accuracy=0.2000  accuracy=0.7523  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.44s eta=26h09m
+  step=   5800  lm_loss=0.7443  q_halt_loss=0.0033  exact_accuracy=0.5000  accuracy=0.8716  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.27s eta=26h06m
+  step=   5850  lm_loss=0.7249  q_halt_loss=0.0029  exact_accuracy=0.2000  accuracy=0.7323  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.37s eta=26h03m
+  step=   5900  lm_loss=0.7033  q_halt_loss=0.0055  exact_accuracy=0.1071  accuracy=0.7390  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.92s eta=26h00m
+  step=   5950  lm_loss=0.7253  q_halt_loss=0.0003  exact_accuracy=0.0714  accuracy=0.7103  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.60s eta=25h56m
+  step=   6000  lm_loss=0.7271  q_halt_loss=0.0101  exact_accuracy=0.1852  accuracy=0.7513  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.38s eta=25h54m
+  step=   6050  lm_loss=0.7097  q_halt_loss=0.0064  exact_accuracy=0.0741  accuracy=0.7206  jacobian_reg=0.0000  deq_iters=8.0000  deq_resid=4.8643  lr=0.0001  dt/50=30.89s eta=25h51m
+  step=   6100  lm_loss=0.7151  q_halt_loss=0.0165  exact_accuracy=0.1852  accuracy=0.7567  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.68s eta=25h48m
+  step=   6150  lm_loss=0.7408  q_halt_loss=0.0159  exact_accuracy=0.0667  accuracy=0.7243  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.34s eta=25h45m
+  step=   6200  lm_loss=0.7382  q_halt_loss=0.0057  exact_accuracy=0.3125  accuracy=0.7785  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.44s eta=25h42m
+  step=   6250  lm_loss=0.7561  q_halt_loss=0.0033  exact_accuracy=0.0000  accuracy=0.6726  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.37s eta=25h39m
+  step=   6300  lm_loss=0.7122  q_halt_loss=0.0236  exact_accuracy=0.2381  accuracy=0.7472  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.36s eta=25h36m
+  step=   6350  lm_loss=0.7310  q_halt_loss=0.0021  exact_accuracy=0.1923  accuracy=0.7555  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.92s eta=25h34m
+  step=   6400  lm_loss=0.7147  q_halt_loss=0.0140  exact_accuracy=0.1875  accuracy=0.7674  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.85s eta=25h31m
+  step=   6450  lm_loss=0.7239  q_halt_loss=0.0049  exact_accuracy=0.1481  accuracy=0.7421  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.51s eta=25h28m
+  step=   6500  lm_loss=0.7132  q_halt_loss=0.0130  exact_accuracy=0.4865  accuracy=0.8649  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.41s eta=25h26m
+  step=   6550  lm_loss=0.7307  q_halt_loss=0.0015  exact_accuracy=0.0952  accuracy=0.7184  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=25h23m
+  step=   6600  lm_loss=0.7103  q_halt_loss=0.0109  exact_accuracy=0.2414  accuracy=0.7957  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.29s eta=25h20m
+  step=   6650  lm_loss=0.7221  q_halt_loss=0.0000  exact_accuracy=0.0000  accuracy=0.6800  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.37s eta=25h18m
+  step=   6700  lm_loss=0.7149  q_halt_loss=0.0044  exact_accuracy=0.2857  accuracy=0.7985  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.76s eta=25h15m
+  step=   6750  lm_loss=0.7194  q_halt_loss=0.0082  exact_accuracy=0.1429  accuracy=0.7524  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.04s eta=25h13m
+  step=   6800  lm_loss=0.6949  q_halt_loss=0.0023  exact_accuracy=0.3103  accuracy=0.8335  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.78s eta=25h10m
+  step=   6850  lm_loss=0.7296  q_halt_loss=0.0004  exact_accuracy=0.1200  accuracy=0.7274  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.65s eta=25h08m
+  step=   6900  lm_loss=0.7268  q_halt_loss=0.0041  exact_accuracy=0.2000  accuracy=0.7807  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.89s eta=25h06m
+  step=   6950  lm_loss=0.6912  q_halt_loss=0.0209  exact_accuracy=0.3030  accuracy=0.8122  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.71s eta=25h03m
+  step=   7000  lm_loss=0.7112  q_halt_loss=0.0032  exact_accuracy=0.2727  accuracy=0.7929  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.43s eta=25h01m
+  step=   7050  lm_loss=0.7412  q_halt_loss=0.0214  exact_accuracy=0.3438  accuracy=0.8287  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.44s eta=24h58m
+  step=   7100  lm_loss=0.7349  q_halt_loss=0.0063  exact_accuracy=0.4138  accuracy=0.8199  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.04s eta=24h56m
+  step=   7150  lm_loss=0.7146  q_halt_loss=0.0118  exact_accuracy=0.2000  accuracy=0.7840  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.54s eta=24h54m
+  step=   7200  lm_loss=0.7044  q_halt_loss=0.0007  exact_accuracy=0.3871  accuracy=0.8156  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.42s eta=24h52m
+  step=   7250  lm_loss=0.7210  q_halt_loss=0.0058  exact_accuracy=0.2609  accuracy=0.7864  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.40s eta=24h49m
+  step=   7300  lm_loss=0.8243  q_halt_loss=0.0007  exact_accuracy=0.0556  accuracy=0.7099  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.33s eta=24h47m
+  step=   7350  lm_loss=0.7052  q_halt_loss=0.0149  exact_accuracy=0.4000  accuracy=0.8375  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.31s eta=24h45m
+  step=   7400  lm_loss=0.6810  q_halt_loss=0.0116  exact_accuracy=0.3200  accuracy=0.8035  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.65s eta=24h43m
+  step=   7450  lm_loss=0.6999  q_halt_loss=0.0011  exact_accuracy=0.2571  accuracy=0.8042  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=31.11s eta=24h41m
+  step=   7500  lm_loss=0.7205  q_halt_loss=0.0107  exact_accuracy=0.3438  accuracy=0.8291  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.88s eta=24h38m
+  step=   7550  lm_loss=0.7042  q_halt_loss=0.0039  exact_accuracy=0.2414  accuracy=0.7812  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.85s eta=24h36m
+  step=   7600  lm_loss=0.7283  q_halt_loss=0.0080  exact_accuracy=0.0357  accuracy=0.7293  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.88s eta=24h34m
+  step=   7650  lm_loss=0.7272  q_halt_loss=0.0006  exact_accuracy=0.1200  accuracy=0.7501  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.65s eta=24h32m
+  step=   7700  lm_loss=0.7147  q_halt_loss=0.0135  exact_accuracy=0.1667  accuracy=0.7551  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.79s eta=24h30m
+  step=   7750  lm_loss=0.7023  q_halt_loss=0.0241  exact_accuracy=0.1739  accuracy=0.7579  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.36s eta=24h28m
+  step=   7800  lm_loss=0.7156  q_halt_loss=0.0002  exact_accuracy=0.1304  accuracy=0.7713  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=24h26m
+  step=   7850  lm_loss=0.6899  q_halt_loss=0.0042  exact_accuracy=0.1786  accuracy=0.7773  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.40s eta=24h24m
+  step=   7900  lm_loss=0.7157  q_halt_loss=0.0182  exact_accuracy=0.2500  accuracy=0.7734  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.50s eta=24h22m
+  step=   7950  lm_loss=0.7215  q_halt_loss=0.0034  exact_accuracy=0.1667  accuracy=0.7613  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.41s eta=24h20m
+  step=   8000  lm_loss=0.6973  q_halt_loss=0.0085  exact_accuracy=0.1667  accuracy=0.7770  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=24h18m
+  step=   8050  lm_loss=0.7244  q_halt_loss=0.0143  exact_accuracy=0.1786  accuracy=0.7738  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.29s eta=24h16m
+  step=   8100  lm_loss=0.6870  q_halt_loss=0.0129  exact_accuracy=0.4211  accuracy=0.8613  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.50s eta=24h14m
+  step=   8150  lm_loss=0.6807  q_halt_loss=0.0307  exact_accuracy=0.1750  accuracy=0.7765  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.58s eta=24h12m
+  step=   8200  lm_loss=0.6920  q_halt_loss=0.0048  exact_accuracy=0.2000  accuracy=0.7697  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=24h10m
+  step=   8250  lm_loss=0.7139  q_halt_loss=0.0046  exact_accuracy=0.3462  accuracy=0.8253  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.38s eta=24h08m
+  step=   8300  lm_loss=0.7133  q_halt_loss=0.0045  exact_accuracy=0.0714  accuracy=0.7593  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.54s eta=24h07m
+  step=   8350  lm_loss=0.6923  q_halt_loss=0.0005  exact_accuracy=0.2000  accuracy=0.7798  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.73s eta=24h05m
+  step=   8400  lm_loss=0.6897  q_halt_loss=0.0071  exact_accuracy=0.2121  accuracy=0.7924  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.44s eta=24h03m
+  step=   8450  lm_loss=0.6802  q_halt_loss=0.0016  exact_accuracy=0.2353  accuracy=0.7938  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=24h01m
+  step=   8500  lm_loss=0.6941  q_halt_loss=0.0064  exact_accuracy=0.2000  accuracy=0.8049  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h59m
+  step=   8550  lm_loss=0.6971  q_halt_loss=0.0117  exact_accuracy=0.2000  accuracy=0.8272  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.44s eta=23h58m
+  step=   8600  lm_loss=0.7266  q_halt_loss=0.0065  exact_accuracy=0.1786  accuracy=0.7482  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.51s eta=23h56m
+  step=   8650  lm_loss=0.6693  q_halt_loss=0.0043  exact_accuracy=0.2571  accuracy=0.8254  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.33s eta=23h54m
+  step=   8700  lm_loss=0.6889  q_halt_loss=0.0059  exact_accuracy=0.3333  accuracy=0.8111  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.31s eta=23h52m
+  step=   8750  lm_loss=0.7072  q_halt_loss=0.0199  exact_accuracy=0.2917  accuracy=0.7840  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.33s eta=23h50m
+  step=   8800  lm_loss=0.6886  q_halt_loss=0.0075  exact_accuracy=0.3333  accuracy=0.8247  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h49m
+  step=   8850  lm_loss=0.7168  q_halt_loss=0.0025  exact_accuracy=0.3636  accuracy=0.8109  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=23h47m
+  step=   8900  lm_loss=0.6805  q_halt_loss=0.0093  exact_accuracy=0.2778  accuracy=0.8128  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.29s eta=23h45m
+  step=   8950  lm_loss=0.6903  q_halt_loss=0.0289  exact_accuracy=0.4000  accuracy=0.8222  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h43m
+  step=   9000  lm_loss=0.7012  q_halt_loss=0.0061  exact_accuracy=0.1944  accuracy=0.7894  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.37s eta=23h42m
+  step=   9050  lm_loss=0.7354  q_halt_loss=0.0124  exact_accuracy=0.2593  accuracy=0.7481  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.33s eta=23h40m
+  step=   9100  lm_loss=0.6856  q_halt_loss=0.0011  exact_accuracy=0.1852  accuracy=0.7750  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.30s eta=23h38m
+  step=   9150  lm_loss=0.6615  q_halt_loss=0.0122  exact_accuracy=0.4118  accuracy=0.8362  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.43s eta=23h37m
+  step=   9200  lm_loss=0.6913  q_halt_loss=0.0087  exact_accuracy=0.0714  accuracy=0.7566  jacobian_reg=0.0000  deq_iters=6.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.37s eta=23h35m
+  step=   9250  lm_loss=0.6673  q_halt_loss=0.0009  exact_accuracy=0.3438  accuracy=0.8353  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.33s eta=23h34m
+  step=   9300  lm_loss=0.6839  q_halt_loss=0.0129  exact_accuracy=0.2258  accuracy=0.8013  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.34s eta=23h32m
+  step=   9350  lm_loss=0.7328  q_halt_loss=0.0065  exact_accuracy=0.1818  accuracy=0.7845  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.68s eta=23h30m
+  step=   9400  lm_loss=0.6711  q_halt_loss=0.0190  exact_accuracy=0.5294  accuracy=0.8813  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.92s eta=23h29m
+  step=   9450  lm_loss=0.6534  q_halt_loss=0.0373  exact_accuracy=0.4333  accuracy=0.8642  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.74s eta=23h27m
+  step=   9500  lm_loss=0.7129  q_halt_loss=0.0018  exact_accuracy=0.2353  accuracy=0.7672  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.39s eta=23h26m
+  step=   9550  lm_loss=0.6824  q_halt_loss=0.0172  exact_accuracy=0.2692  accuracy=0.8172  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=23h24m
+  step=   9600  lm_loss=0.6479  q_halt_loss=0.0146  exact_accuracy=0.5000  accuracy=0.8793  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.28s eta=23h23m
+  step=   9650  lm_loss=0.6841  q_halt_loss=0.0037  exact_accuracy=0.2500  accuracy=0.8250  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.34s eta=23h21m
+  step=   9700  lm_loss=0.6739  q_halt_loss=0.0106  exact_accuracy=0.4839  accuracy=0.8586  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h20m
+  step=   9750  lm_loss=0.6928  q_halt_loss=0.0014  exact_accuracy=0.2609  accuracy=0.7950  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h18m
+  step=   9800  lm_loss=0.6688  q_halt_loss=0.0027  exact_accuracy=0.3529  accuracy=0.8108  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=23h17m
+  step=   9850  lm_loss=0.6991  q_halt_loss=0.0506  exact_accuracy=0.5122  accuracy=0.8814  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.21s eta=23h15m
+  step=   9900  lm_loss=0.7101  q_halt_loss=0.0069  exact_accuracy=0.1250  accuracy=0.7973  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=23h14m
+  step=   9950  lm_loss=0.6771  q_halt_loss=0.0245  exact_accuracy=0.4595  accuracy=0.8752  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=23h12m
+  step=  10000  lm_loss=0.6950  q_halt_loss=0.0005  exact_accuracy=0.5000  accuracy=0.8519  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.54s eta=23h11m
+  step=  10050  lm_loss=0.6464  q_halt_loss=0.0109  exact_accuracy=0.6471  accuracy=0.9012  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.29s eta=23h09m
+  step=  10100  lm_loss=0.6883  q_halt_loss=0.0161  exact_accuracy=0.1364  accuracy=0.7486  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h08m
+  step=  10150  lm_loss=0.6597  q_halt_loss=0.0033  exact_accuracy=0.3947  accuracy=0.8450  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h06m
+  step=  10200  lm_loss=0.6701  q_halt_loss=0.0042  exact_accuracy=0.5882  accuracy=0.9020  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.26s eta=23h05m
+  step=  10250  lm_loss=0.6614  q_halt_loss=0.0039  exact_accuracy=0.3824  accuracy=0.8537  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=23h03m
+  step=  10300  lm_loss=0.7117  q_halt_loss=0.0252  exact_accuracy=0.3714  accuracy=0.7834  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=23h02m
+  step=  10350  lm_loss=0.6683  q_halt_loss=0.0132  exact_accuracy=0.3333  accuracy=0.8548  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.25s eta=23h01m
+  step=  10400  lm_loss=0.6619  q_halt_loss=0.0099  exact_accuracy=0.5000  accuracy=0.8495  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.36s eta=22h59m
+  step=  10450  lm_loss=0.6964  q_halt_loss=0.0085  exact_accuracy=0.2308  accuracy=0.8082  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h58m
+  step=  10500  lm_loss=0.6781  q_halt_loss=0.0004  exact_accuracy=0.2647  accuracy=0.8010  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.36s eta=22h56m
+  step=  10550  lm_loss=0.6731  q_halt_loss=0.0016  exact_accuracy=0.4688  accuracy=0.8515  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.37s eta=22h55m
+  step=  10600  lm_loss=0.6916  q_halt_loss=0.0136  exact_accuracy=0.2333  accuracy=0.8066  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h54m
+  step=  10650  lm_loss=0.6800  q_halt_loss=0.0008  exact_accuracy=0.1538  accuracy=0.7764  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h52m
+  step=  10700  lm_loss=0.6442  q_halt_loss=0.0190  exact_accuracy=0.4286  accuracy=0.8629  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h51m
+  step=  10750  lm_loss=0.6744  q_halt_loss=0.0030  exact_accuracy=0.6296  accuracy=0.8953  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h50m
+  step=  10800  lm_loss=0.6585  q_halt_loss=0.0035  exact_accuracy=0.4286  accuracy=0.8545  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h48m
+  step=  10850  lm_loss=0.6801  q_halt_loss=0.0231  exact_accuracy=0.5610  accuracy=0.8817  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.29s eta=22h47m
+  step=  10900  lm_loss=0.6724  q_halt_loss=0.0052  exact_accuracy=0.2941  accuracy=0.8177  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h46m
+  step=  10950  lm_loss=0.6704  q_halt_loss=0.0168  exact_accuracy=0.5455  accuracy=0.9136  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h44m
+  step=  11000  lm_loss=0.6476  q_halt_loss=0.0168  exact_accuracy=0.3448  accuracy=0.8442  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h43m
+  step=  11050  lm_loss=0.6684  q_halt_loss=0.0591  exact_accuracy=0.7500  accuracy=0.9410  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h42m
+  step=  11100  lm_loss=0.6533  q_halt_loss=0.0191  exact_accuracy=0.5333  accuracy=0.8679  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h40m
+  step=  11150  lm_loss=0.6734  q_halt_loss=0.0148  exact_accuracy=0.3333  accuracy=0.8107  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h39m
+  step=  11200  lm_loss=0.6840  q_halt_loss=0.0011  exact_accuracy=0.2000  accuracy=0.7918  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h38m
+  step=  11250  lm_loss=0.6661  q_halt_loss=0.0007  exact_accuracy=0.2222  accuracy=0.7846  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h37m
+  step=  11300  lm_loss=0.6782  q_halt_loss=0.0196  exact_accuracy=0.4286  accuracy=0.8205  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h35m
+  step=  11350  lm_loss=0.6622  q_halt_loss=0.0021  exact_accuracy=0.5455  accuracy=0.8698  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h34m
+  step=  11400  lm_loss=0.6844  q_halt_loss=0.0047  exact_accuracy=0.2609  accuracy=0.7912  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.29s eta=22h33m
+  step=  11450  lm_loss=0.6576  q_halt_loss=0.0106  exact_accuracy=0.4412  accuracy=0.8555  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h32m
+  step=  11500  lm_loss=0.6516  q_halt_loss=0.0062  exact_accuracy=0.4839  accuracy=0.8554  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.21s eta=22h30m
+  step=  11550  lm_loss=0.6907  q_halt_loss=0.0334  exact_accuracy=0.5217  accuracy=0.8792  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h29m
+  step=  11600  lm_loss=0.6990  q_halt_loss=0.0082  exact_accuracy=0.3478  accuracy=0.8258  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=22h28m
+  step=  11650  lm_loss=0.6538  q_halt_loss=0.0007  exact_accuracy=0.3784  accuracy=0.8682  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h27m
+  step=  11700  lm_loss=0.6564  q_halt_loss=0.0115  exact_accuracy=0.5000  accuracy=0.8519  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.25s eta=22h25m
+  step=  11750  lm_loss=0.6397  q_halt_loss=0.0135  exact_accuracy=0.5882  accuracy=0.9136  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h24m
+  step=  11800  lm_loss=0.6976  q_halt_loss=0.0413  exact_accuracy=0.4000  accuracy=0.8365  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h23m
+  step=  11850  lm_loss=0.6663  q_halt_loss=0.0033  exact_accuracy=0.4667  accuracy=0.8683  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.21s eta=22h22m
+  step=  11900  lm_loss=0.6486  q_halt_loss=0.0284  exact_accuracy=0.2692  accuracy=0.8210  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h21m
+  step=  11950  lm_loss=0.6301  q_halt_loss=0.0202  exact_accuracy=0.6190  accuracy=0.9018  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h19m
+  step=  12000  lm_loss=0.6438  q_halt_loss=0.0069  exact_accuracy=0.4857  accuracy=0.8723  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.21s eta=22h18m
+  step=  12050  lm_loss=0.6233  q_halt_loss=0.0065  exact_accuracy=0.6286  accuracy=0.9016  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h17m
+  step=  12100  lm_loss=0.6602  q_halt_loss=0.0171  exact_accuracy=0.6136  accuracy=0.8939  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h16m
+  step=  12150  lm_loss=0.6512  q_halt_loss=0.0129  exact_accuracy=0.4412  accuracy=0.8489  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h15m
+  step=  12200  lm_loss=0.6838  q_halt_loss=0.0397  exact_accuracy=0.4286  accuracy=0.8488  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h13m
+  step=  12250  lm_loss=0.6460  q_halt_loss=0.0114  exact_accuracy=0.5000  accuracy=0.8727  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h12m
+  step=  12300  lm_loss=0.6635  q_halt_loss=0.0264  exact_accuracy=0.5417  accuracy=0.8699  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.28s eta=22h11m
+  step=  12350  lm_loss=0.6663  q_halt_loss=0.0154  exact_accuracy=0.6000  accuracy=0.8733  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h10m
+  step=  12400  lm_loss=0.6511  q_halt_loss=0.0150  exact_accuracy=0.5500  accuracy=0.8701  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h09m
+  step=  12450  lm_loss=0.6283  q_halt_loss=0.0020  exact_accuracy=0.6000  accuracy=0.8947  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h08m
+  step=  12500  lm_loss=0.6562  q_halt_loss=0.0090  exact_accuracy=0.4250  accuracy=0.8330  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h07m
+  step=  12550  lm_loss=0.6479  q_halt_loss=0.0203  exact_accuracy=0.4643  accuracy=0.8629  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.21s eta=22h06m
+  step=  12600  lm_loss=0.6603  q_halt_loss=0.0205  exact_accuracy=0.4500  accuracy=0.8330  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.21s eta=22h04m
+  step=  12650  lm_loss=0.6411  q_halt_loss=0.0203  exact_accuracy=0.6316  accuracy=0.9129  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.21s eta=22h03m
+  step=  12700  lm_loss=0.6232  q_halt_loss=0.0018  exact_accuracy=0.7073  accuracy=0.9313  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h02m
+  step=  12750  lm_loss=0.6546  q_halt_loss=0.0168  exact_accuracy=0.3103  accuracy=0.8242  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h01m
+  step=  12800  lm_loss=0.6656  q_halt_loss=0.0196  exact_accuracy=0.6538  accuracy=0.8955  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=22h00m
+  step=  12850  lm_loss=0.6577  q_halt_loss=0.0044  exact_accuracy=0.5417  accuracy=0.8817  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=21h59m
+  step=  12900  lm_loss=0.6396  q_halt_loss=0.0143  exact_accuracy=0.6389  accuracy=0.8824  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.22s eta=21h58m
+  step=  12950  lm_loss=0.6446  q_halt_loss=0.0302  exact_accuracy=0.7105  accuracy=0.9327  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=21h57m
+  step=  13000  lm_loss=0.6514  q_halt_loss=0.0107  exact_accuracy=0.5172  accuracy=0.8740  jacobian_reg=0.0000  deq_iters=5.0000  deq_resid=1.0000  lr=0.0001  dt/50=30.23s eta=21h56m
+[2026-05-03T06:08:03.570] error: *** JOB 3404920 ON c03-06 CANCELLED AT 2026-05-03T06:08:03 DUE to SIGNAL Terminated ***
