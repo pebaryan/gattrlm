@@ -141,6 +141,11 @@ class SimpleGPT(nn.Module):
         return logits, loss
 
 
+class RepoNativeGPTBaseline(SimpleGPT):
+    """Repo-native GPT baseline used as the non-Clifford comparison."""
+    pass
+
+
 # Real CliffordAttractor from attractor.models.clifford_attractor
 class CliffordAttractorLM(nn.Module):
     """Wrapper for CliffordAttractor to work with language model benchmark."""
@@ -180,7 +185,7 @@ class CliffordAttractorLM(nn.Module):
         return logits, None
 
 
-class CausalSequenceBaseline(nn.Module):
+class CausalSequenceProxyBaseline(nn.Module):
     """Non-Clifford baseline with the same causal front-end as CliffordAttractorLM.
 
     This is a proxy for the missing original attractor baseline in this checkout.
@@ -521,8 +526,8 @@ def main():
 
     benchmarks = [
         BenchmarkConfig(
-            name='SimpleGPT-Small',
-            model_fn=SimpleGPT,
+            name='RepoNativeGPT-Small',
+            model_fn=RepoNativeGPTBaseline,
             model_kwargs={'config': GPTConfig(
                 vocab_size=len(tokenizer),
                 block_size=128,
@@ -536,8 +541,8 @@ def main():
             max_train_batches=100
         ),
         BenchmarkConfig(
-            name='SimpleGPT-Medium',
-            model_fn=SimpleGPT,
+            name='RepoNativeGPT-Medium',
+            model_fn=RepoNativeGPTBaseline,
             model_kwargs={'config': GPTConfig(
                 vocab_size=len(tokenizer),
                 block_size=128,
@@ -566,8 +571,8 @@ def main():
             max_train_batches=100
         ),
         BenchmarkConfig(
-            name='CausalSequenceBaseline',
-            model_fn=CausalSequenceBaseline,
+            name='CausalSequenceProxyBaseline',
+            model_fn=CausalSequenceProxyBaseline,
             model_kwargs={'config': GPTConfig(
                 vocab_size=len(tokenizer),
                 block_size=128,
