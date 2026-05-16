@@ -150,32 +150,25 @@ class CliffordAttractorLM(nn.Module):
         
         if algebra_config is None:
             from attractor.models.clifford_attractor import CliffordAttractorConfig
-            # Create config matching the GPT config dimensions
+            # Use a causal sequence-aware Clifford model for next-token prediction.
             algebra_config = CliffordAttractorConfig(
                 p=3, q=0, r=0,
-                channels=config.n_embd // 4,  # Smaller algebra dimension for efficiency
+                channels=config.n_embd // 4,
                 hidden_channels=config.n_embd,
                 num_blocks=2,
                 num_rotors=2,
                 max_iter=10,  # Reduce significantly for faster training
                 tol=1e-3,  # Looser tolerance for faster convergence
-                anderson_m=2  # Less Anderson memory for speed
+                anderson_m=2,  # Less Anderson memory for speed
+                max_seq_len=config.block_size,
+                use_sequence_mixer=True,
             )
         
         from attractor.models.clifford_attractor import CliffordAttractor
         self.attractor = CliffordAttractor(algebra_config, vocab_size=config.vocab_size)
         
     def forward(self, idx, targets=None, pad_token_id=0):
-        # CliffordAttractor returns logits - need to check actual shape
-        raw_logits = self.attractor(idx)
-        
-        # raw_logits might be [batch, seq, vocab] or [seq, vocab] depending on implementation
-        # Check ndims and adapt
-        if raw_logits.dim() == 2:
-            # [seq, vocab] -> add batch dimension
-            logits = raw_logits.unsqueeze(0)  # [1, seq, vocab]
-        else:
-            logits = raw_logits
+        logits = self.attractor(idx)
         
         if targets is not None:
             loss = F.cross_entropy(

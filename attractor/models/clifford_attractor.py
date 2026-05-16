@@ -841,6 +841,8 @@ class CliffordAttractorConfig:
     anderson_m: int = 5
     output_mode: str = "scalar"
     init_std: float = 0.01
+    max_seq_len: int = 512
+    use_sequence_mixer: bool = True
 
 
 # ========================================================================
@@ -871,6 +873,16 @@ class CliffordAttractor(nn.Module):
 
         # Token → multivector embedding
         self.token_embed = nn.Embedding(vocab_size, config.channels * self.algebra.dim)
+        self.pos_embed = nn.Embedding(config.max_seq_len, config.channels * self.algebra.dim)
+        self.use_sequence_mixer = config.use_sequence_mixer
+        if self.use_sequence_mixer:
+            self.sequence_mixer = nn.GRU(
+                input_size=config.channels * self.algebra.dim,
+                hidden_size=config.channels * self.algebra.dim,
+                batch_first=True,
+            )
+            self.sequence_gate = nn.Parameter(torch.tensor(0.5))
+        self.output_gate = nn.Parameter(torch.tensor(-2.0))
 
         # Fixed-point blocks (stacked to form f)
         hidden = config.hidden_channels or (config.channels * 2)
@@ -918,12 +930,24 @@ class CliffordAttractor(nn.Module):
             Optionally, dict with solver stats.
         """
         B, S = input_ids.shape
+        if S > self.config.max_seq_len:
+            raise ValueError(
+                f"Sequence length {S} exceeds max_seq_len={self.config.max_seq_len}. "
+                "Increase CliffordAttractorConfig.max_seq_len for longer contexts."
+            )
 
         # Embed tokens → multivectors [B, S, C*dim]
-        emb = self.token_embed(input_ids)  # [B, S, C*dim]
+        emb = self.token_embed(input_ids)
+        pos = torch.arange(S, device=input_ids.device, dtype=torch.long)
+        emb = emb + self.pos_embed(pos).unsqueeze(0)
+
+        if self.use_sequence_mixer:
+            mixed, _ = self.sequence_mixer(emb)
+            mix_gate = torch.sigmoid(self.sequence_gate)
+            emb = mix_gate * mixed + (1.0 - mix_gate) * emb
 
         # Flatten batch and sequence for batched solve
-        x0 = emb.view(B * S, -1)  # [B*S, C*dim]
+        x0 = emb.reshape(B * S, -1)  # [B*S, C*dim]
 
         cfg = self.config
         x_star = _solve_fixed_point(
@@ -934,7 +958,9 @@ class CliffordAttractor(nn.Module):
         )
 
         # Project to vocab logits [B*S, vocab_size]
-        logits = self.output_proj(x_star)  # [B*S, vocab_size]
+        output_mix = torch.sigmoid(self.output_gate)
+        x_out = output_mix * x_star + (1.0 - output_mix) * x0
+        logits = self.output_proj(x_out)  # [B*S, vocab_size]
         logits = logits.view(B, S, -1)  # [B, S, vocab_size]
 
         if return_solver_stats:
