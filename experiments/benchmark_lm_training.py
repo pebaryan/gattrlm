@@ -155,6 +155,7 @@ class CliffordAttractorLM(nn.Module):
         config: GPTConfig,
         algebra_config=None,
         variant: str = "fast",
+        channels_override: Optional[int] = None,
     ):
         super().__init__()
         self.config = config
@@ -167,7 +168,7 @@ class CliffordAttractorLM(nn.Module):
             if variant not in {"fast", "no_mixer", "deep_solve"}:
                 raise ValueError(f"Unknown CliffordAttractorLM variant: {variant}")
 
-            channels = max(16, config.n_embd // 8)
+            channels = channels_override if channels_override is not None else max(16, config.n_embd // 8)
             hidden_channels = channels * 2
             max_iter = 4
             tol = 2e-3
@@ -688,6 +689,36 @@ def main():
             epochs=20,
             max_train_batches=100,
             profile_batches=3
+        ),
+        BenchmarkConfig(
+            name='CliffordAttractor-LM-24ch',
+            model_fn=CliffordAttractorLM,
+            model_kwargs={'config': GPTConfig(
+                vocab_size=len(tokenizer),
+                block_size=128,
+                n_embd=256,
+                n_layer=4,
+                n_head=4
+            ), 'channels_override': 24},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
+        ),
+        BenchmarkConfig(
+            name='CliffordAttractor-LM-40ch',
+            model_fn=CliffordAttractorLM,
+            model_kwargs={'config': GPTConfig(
+                vocab_size=len(tokenizer),
+                block_size=128,
+                n_embd=256,
+                n_layer=4,
+                n_head=4
+            ), 'channels_override': 40},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
         ),
         BenchmarkConfig(
             name='CliffordAttractor-LM-NoMixer',
