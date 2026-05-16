@@ -404,6 +404,55 @@ def train_epoch(model, dataloader, optimizer, device, max_batches=None):
     return avg_loss, tokens_per_sec, elapsed
 
 
+def profile_train_step(model, dataloader, optimizer, device, num_batches: int = 3):
+    """Profile forward/backward/step timing for a few batches."""
+    model.train()
+    pad_token_id = 0
+    records = []
+    iterator = iter(dataloader)
+
+    for _ in range(num_batches):
+        x, y = next(iterator)
+        x, y = x.to(device), y.to(device)
+
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
+        t0 = time.time()
+
+        optimizer.zero_grad()
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
+        t1 = time.time()
+
+        _, loss = model(x, y, pad_token_id=pad_token_id)
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
+        t2 = time.time()
+
+        loss.backward()
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
+        t3 = time.time()
+
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
+        t4 = time.time()
+
+        records.append({
+            'zero_grad': t1 - t0,
+            'forward_loss': t2 - t1,
+            'backward': t3 - t2,
+            'step': t4 - t3,
+            'total': t4 - t0,
+            'loss': float(loss.detach()),
+            'tokens': int(x.numel()),
+        })
+
+    return records
+
+
 @torch.no_grad()
 def evaluate(model, dataloader, device, max_batches=20):
     model.eval()
@@ -434,6 +483,7 @@ class BenchmarkConfig:
     epochs: int = 20
     max_train_batches: int = 100
     max_eval_batches: int = 30
+    profile_batches: int = 0
 
 
 def run_benchmark(config: BenchmarkConfig, tokenizer, texts, device):
@@ -469,12 +519,25 @@ def run_benchmark(config: BenchmarkConfig, tokenizer, texts, device):
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.lr, weight_decay=0.01)
 
+    if config.profile_batches > 0:
+        print('Profiling {} train steps...'.format(config.profile_batches))
+        profile_records = profile_train_step(
+            model, train_loader, optimizer, device, num_batches=config.profile_batches
+        )
+        for i, rec in enumerate(profile_records, 1):
+            print(
+                '  Profile batch {}/{}: loss={:.4f}, total={:.3f}s, zero_grad={:.3f}s, forward={:.3f}s, backward={:.3f}s, step={:.3f}s'.format(
+                    i, config.profile_batches, rec['loss'], rec['total'], rec['zero_grad'], rec['forward_loss'], rec['backward'], rec['step']
+                )
+            )
+
     results = {
         'name': config.name,
         'params': num_params,
         'train_losses': [],
         'eval_losses': [],
         'times': [],
+        'profile': profile_records if config.profile_batches > 0 else [],
     }
 
     total_start = time.time()
@@ -606,7 +669,8 @@ def main():
             batch_size=16,
             lr=1e-3,
             epochs=20,
-            max_train_batches=100
+            max_train_batches=100,
+            profile_batches=3
         ),
     ]
 
