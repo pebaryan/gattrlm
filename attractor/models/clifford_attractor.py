@@ -72,6 +72,58 @@ def build_gp_table(p: int, q: int, r: int = 0) -> torch.Tensor:
     return table
 
 
+def _extract_sparse_gp(table: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Extract sparse (i, j, k, sign) triples from a dense GP table.
+
+    The GP table has shape [dim, dim, dim] but each basis blade product
+    produces exactly one blade (table[i,j,:] has one non-zero). So the
+    table has exactly dim*dim non-zero entries out of dim*dim*dim.
+
+    Returns:
+        i_idx: [nnz] — indices into the first operand x
+        j_idx: [nnz] — indices into the second operand y
+        k_idx: [nnz] — indices into the result
+        signs: [nnz] — corresponding GP coefficients
+    """
+    nnz_mask = table.abs() > 0
+    indices = torch.where(nnz_mask)
+    i_idx, j_idx, k_idx = indices
+    signs = table[i_idx, j_idx, k_idx]
+    return i_idx, j_idx, k_idx, signs
+
+
+def _filter_sparse_op(
+    i_idx: torch.Tensor, j_idx: torch.Tensor, k_idx: torch.Tensor,
+    signs: torch.Tensor, grade_index: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Filter sparse GP triples to keep only outer (wedge) product entries.
+
+    The outer product keeps entries where grade(k) == grade(i) + grade(j),
+    i.e., the grade of the result equals the sum of the input grades.
+    """
+    gi = grade_index[i_idx]
+    gj = grade_index[j_idx]
+    gk = grade_index[k_idx]
+    mask = gk == gi + gj
+    return i_idx[mask], j_idx[mask], k_idx[mask], signs[mask]
+
+
+def _filter_sparse_ip(
+    i_idx: torch.Tensor, j_idx: torch.Tensor, k_idx: torch.Tensor,
+    signs: torch.Tensor, grade_index: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Filter sparse GP triples to keep only inner product entries.
+
+    The Hestenes inner product keeps entries where
+    grade(k) == abs(grade(i) - grade(j)).
+    """
+    gi = grade_index[i_idx]
+    gj = grade_index[j_idx]
+    gk = grade_index[k_idx]
+    mask = gk == (gi - gj).abs()
+    return i_idx[mask], j_idx[mask], k_idx[mask], signs[mask]
+
+
 def _grade_index_map(n: int) -> torch.Tensor:
     """Return [dim] tensor with grade of each basis blade."""
     return torch.tensor([i.bit_count() for i in range(1 << n)], dtype=torch.long)
@@ -118,24 +170,140 @@ class CliffordAlgebra(nn.Module):
         self.n = p + q + r
         self.dim = 1 << self.n
 
-        self.register_buffer("_gp_table", build_gp_table(p, q, r))
+        gp_table = build_gp_table(p, q, r)
+        self.register_buffer("_gp_table", gp_table)
         self.register_buffer("_grade_index", _grade_index_map(self.n))
         self.register_buffer("_metric_signs", _blade_metric_signs_precomputed(p, q, r))
 
+        # Sparse GP indices: for efficient geometric product at higher dimensions.
+        # Each basis blade product e_i * e_j = sign * e_k (single blade, no sum),
+        # so we can replace dense einsum O(dim^3) with sparse index_select + index_add_ O(dim^2).
+        i_idx, j_idx, k_idx, signs = _extract_sparse_gp(gp_table)
+        self.register_buffer("_gp_i", i_idx)
+        self.register_buffer("_gp_j", j_idx)
+        self.register_buffer("_gp_k", k_idx)
+        self.register_buffer("_gp_sign", signs)
+
+        # Sparse OP/IP indices (for opt-in sparse path).
+        grade_idx = self._grade_index
+        op_i, op_j, op_k, op_sign = _filter_sparse_op(i_idx, j_idx, k_idx, signs, grade_idx)
+        self.register_buffer("_op_i", op_i)
+        self.register_buffer("_op_j", op_j)
+        self.register_buffer("_op_k", op_k)
+        self.register_buffer("_op_sign", op_sign)
+        ip_i, ip_j, ip_k, ip_sign = _filter_sparse_ip(i_idx, j_idx, k_idx, signs, grade_idx)
+        self.register_buffer("_ip_i", ip_i)
+        self.register_buffer("_ip_j", ip_j)
+        self.register_buffer("_ip_k", ip_k)
+        self.register_buffer("_ip_sign", ip_sign)
+
     # --- Core operations ---
 
-    def geometric_product(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        """Geometric product: x * y. Supports arbitrary batch dims."""
+    def _dense_geometric_product(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Geometric product via dense einsum (efficient for small dim)."""
         gp = self._gp_table.to(device=x.device, dtype=x.dtype)
         return torch.einsum("...i,...j,ijk->...k", x, y, gp)
+
+    def _dense_filtered_table(
+        self,
+        *,
+        device: torch.device,
+        dtype: torch.dtype,
+        attr_name: str,
+        predicate: Callable[[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor],
+    ) -> torch.Tensor:
+        """Lazily build and cache a dense grade-filtered Cayley table."""
+        table = getattr(self, attr_name, None)
+        if table is None:
+            grade_idx = self._grade_index
+            table = torch.zeros(self.dim, self.dim, self.dim, device=grade_idx.device, dtype=self._gp_table.dtype)
+            for n in range(len(self._gp_i)):
+                ii = int(self._gp_i[n])
+                jj = int(self._gp_j[n])
+                kk = int(self._gp_k[n])
+                if predicate(grade_idx[ii], grade_idx[jj], grade_idx[kk], self._gp_sign[n]):
+                    table[ii, jj, kk] = float(self._gp_sign[n])
+            self.register_buffer(attr_name, table)
+        return table.to(device=device, dtype=dtype)
+
+    # Sparse GP uses index_select + index_add_ which is O(dim^2) vs O(dim^3) for dense.
+    # On CPU, einsum (MKL) is faster for dim <= 128. On GPU with @torch.compile,
+    # sparse becomes beneficial around dim >= 32. Set higher to always prefer dense.
+    _USE_SPARSE_GP = False
+
+    def _sparse_contract(
+        self, x: torch.Tensor, y: torch.Tensor,
+        i_idx: torch.Tensor, j_idx: torch.Tensor,
+        k_idx: torch.Tensor, signs: torch.Tensor
+    ) -> torch.Tensor:
+        """Generic sparse contraction: result[k] += x[i] * y[j] * sign
+        for each (i, j, k, sign) triple.
+        """
+        i_idx = i_idx.to(device=x.device)
+        j_idx = j_idx.to(device=x.device)
+        k_idx = k_idx.to(device=x.device)
+        signs = signs.to(device=x.device, dtype=x.dtype)
+        x_gathered = x.index_select(-1, i_idx)
+        y_gathered = y.index_select(-1, j_idx)
+        products = x_gathered * y_gathered * signs
+        out = products.new_zeros(*products.shape[:-1], self.dim)
+        return out.index_add_(-1, k_idx, products)
+
+    def geometric_product(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Geometric product: x * y. Supports arbitrary batch dims.
+
+        Uses dense einsum by default. Sparse (index_select + index_add_)
+        can be enabled by setting `alg._USE_SPARSE_GP = True` for GPU
+        workloads at dim >= 32.
+        """
+        if self._USE_SPARSE_GP:
+            return self._sparse_contract(
+                x, y, self._gp_i, self._gp_j, self._gp_k, self._gp_sign
+            )
+        return self._dense_geometric_product(x, y)
+
+    def outer_product(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Outer (wedge) product: grade-raising part of the geometric product.
+
+        Uses precomputed dense OP table (cached buffer) for the default path,
+        or sparse contraction when _USE_SPARSE_GP is enabled.
+        """
+        if self._USE_SPARSE_GP:
+            return self._sparse_contract(
+                x, y, self._op_i, self._op_j, self._op_k, self._op_sign
+            )
+        op = self._dense_filtered_table(
+            device=x.device,
+            dtype=x.dtype,
+            attr_name="_op_table",
+            predicate=lambda gi, gj, gk, _: gk == gi + gj,
+        )
+        return torch.einsum("...i,...j,ijk->...k", x, y, op)
+
+    def inner_product(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Hestenes inner product (grade-lowering).
+
+        Uses precomputed dense IP table (cached buffer) for the default path,
+        or sparse contraction when _USE_SPARSE_GP is enabled.
+        """
+        if self._USE_SPARSE_GP:
+            return self._sparse_contract(
+                x, y, self._ip_i, self._ip_j, self._ip_k, self._ip_sign
+            )
+        ip = self._dense_filtered_table(
+            device=x.device,
+            dtype=x.dtype,
+            attr_name="_ip_table",
+            predicate=lambda gi, gj, gk, _: gk == (gi - gj).abs(),
+        )
+        return torch.einsum("...i,...j,ijk->...k", x, y, ip)
 
     def sandwich_product(
         self, left: torch.Tensor, x: torch.Tensor, right: torch.Tensor
     ) -> torch.Tensor:
         """Sandwich product: left * x * right (typically R * x * R~)."""
-        gp = self._gp_table.to(device=x.device, dtype=x.dtype)
-        temp = torch.einsum("...i,...j,ijk->...k", left, x, gp)
-        return torch.einsum("...i,...j,ijk->...k", temp, right, gp)
+        temp = self.geometric_product(left, x)
+        return self.geometric_product(temp, right)
 
     # --- Grade operations ---
 

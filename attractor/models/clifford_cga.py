@@ -29,31 +29,6 @@ from .clifford_attractor import CliffordAlgebra
 # ========================================================================
 
 
-def build_outer_product_table(algebra: CliffordAlgebra) -> torch.Tensor:
-    """Build the outer (wedge) product Cayley table for Cl(p,q,r).
-
-    For basis blades: a ∧ b = 0 if a & b (overlap), else a ∧ b = gp(a,b).
-    The table stores only grade-increasing contributions.
-
-    Returns T[dim, dim, dim] where T[i,j,k] = coeff of blade k in
-    outer_product(basis_i, basis_j), or 0 if the outer product vanishes.
-    """
-    gp = algebra._gp_table
-    grades = algebra._grade_index
-    dim = gp.shape[0]
-    op_table = torch.zeros_like(gp)
-    for i in range(dim):
-        gi = grades[i].item()
-        for j in range(dim):
-            gj = grades[j].item()
-            g_target = gi + gj
-            for k in range(dim):
-                val = gp[i, j, k].item()
-                if val != 0 and grades[k].item() == g_target:
-                    op_table[i, j, k] = float(val)
-    return op_table
-
-
 # ========================================================================
 #  Null basis utilities
 # ========================================================================
@@ -346,17 +321,13 @@ def dual(algebra: CliffordAlgebra, x: torch.Tensor) -> torch.Tensor:
     return algebra.geometric_product(x, I_inv)
 
 
-def outer_product(
-    algebra: CliffordAlgebra, x: torch.Tensor, y: torch.Tensor
-) -> torch.Tensor:
-    """Outer (wedge) product using a precomputed grade-preserving table.
+def outer_product(algebra: CliffordAlgebra, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    """Outer (wedge) product: grade-increasing part of the geometric product.
 
-    Builds the table lazily and caches it on the algebra instance.
+    Delegates to CliffordAlgebra.outer_product() which uses precomputed
+    sparse indices for O(dim^2) contraction (vs O(dim^3) for dense einsum).
     """
-    if not hasattr(algebra, '_op_table') or algebra._op_table is None:
-        object.__setattr__(algebra, '_op_table', build_outer_product_table(algebra))
-    op = algebra._op_table.to(device=x.device, dtype=x.dtype)
-    return torch.einsum("...i,...j,ijk->...k", x, y, op)
+    return algebra.outer_product(x, y)
 
 
 def meet(algebra: CliffordAlgebra, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
