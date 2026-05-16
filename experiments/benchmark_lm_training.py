@@ -149,22 +149,30 @@ class RepoNativeGPTBaseline(SimpleGPT):
 # Real CliffordAttractor from attractor.models.clifford_attractor
 class CliffordAttractorLM(nn.Module):
     """Wrapper for CliffordAttractor to work with language model benchmark."""
-    def __init__(self, config: GPTConfig, algebra_config=None):
+
+    def __init__(
+        self,
+        config: GPTConfig,
+        algebra_config=None,
+        fast_mode: bool = True,
+    ):
         super().__init__()
         self.config = config
         
         if algebra_config is None:
             from attractor.models.clifford_attractor import CliffordAttractorConfig
-            # Use a causal sequence-aware Clifford model for next-token prediction.
+            # Fast LM mode: keep the Clifford core, but shrink the fixed-point state
+            # and solver budget so training throughput stays usable.
+            channels = max(16, config.n_embd // 8) if fast_mode else max(32, config.n_embd // 4)
             algebra_config = CliffordAttractorConfig(
                 p=3, q=0, r=0,
-                channels=config.n_embd // 4,
-                hidden_channels=config.n_embd,
+                channels=channels,
+                hidden_channels=channels * 2,
                 num_blocks=2,
                 num_rotors=2,
-                max_iter=10,  # Reduce significantly for faster training
-                tol=1e-3,  # Looser tolerance for faster convergence
-                anderson_m=2,  # Less Anderson memory for speed
+                max_iter=4 if fast_mode else 10,
+                tol=2e-3 if fast_mode else 1e-3,
+                anderson_m=1 if fast_mode else 2,
                 max_seq_len=config.block_size,
                 use_sequence_mixer=True,
             )
@@ -586,7 +594,7 @@ def main():
             max_train_batches=100
         ),
         BenchmarkConfig(
-            name='CliffordAttractor-LM',
+            name='CliffordAttractor-LM-Fast',
             model_fn=CliffordAttractorLM,
             model_kwargs={'config': GPTConfig(
                 vocab_size=len(tokenizer),
