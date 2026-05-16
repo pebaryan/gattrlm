@@ -180,6 +180,49 @@ class CliffordAttractorLM(nn.Module):
         return logits, None
 
 
+class CausalSequenceBaseline(nn.Module):
+    """Non-Clifford baseline with the same causal front-end as CliffordAttractorLM.
+
+    This is a proxy for the missing original attractor baseline in this checkout.
+    It keeps token/position embeddings and a causal GRU, but removes the Clifford
+    fixed-point core.
+    """
+
+    def __init__(self, config: GPTConfig):
+        super().__init__()
+        self.config = config
+        feature_dim = (config.n_embd // 4) * 8
+        self.token_embed = nn.Embedding(config.vocab_size, feature_dim)
+        self.pos_embed = nn.Embedding(config.block_size, feature_dim)
+        self.sequence_mixer = nn.GRU(feature_dim, feature_dim, batch_first=True)
+        self.sequence_gate = nn.Parameter(torch.tensor(0.5))
+        self.output_gate = nn.Parameter(torch.tensor(-2.0))
+        self.output_proj = nn.Linear(feature_dim, config.vocab_size)
+
+    def forward(self, idx, targets=None, pad_token_id=0):
+        B, T = idx.size()
+        if T > self.config.block_size:
+            raise ValueError(f"Sequence length {T} exceeds block_size={self.config.block_size}")
+
+        tok = self.token_embed(idx)
+        pos = torch.arange(T, device=idx.device, dtype=torch.long)
+        emb = tok + self.pos_embed(pos).unsqueeze(0)
+        mixed, _ = self.sequence_mixer(emb)
+        mix_gate = torch.sigmoid(self.sequence_gate)
+        x = mix_gate * mixed + (1.0 - mix_gate) * emb
+        output_mix = torch.sigmoid(self.output_gate)
+        logits = self.output_proj(output_mix * x + (1.0 - output_mix) * emb)
+
+        if targets is not None:
+            loss = F.cross_entropy(
+                logits.view(-1, logits.size(-1)),
+                targets.view(-1),
+                ignore_index=pad_token_id,
+            )
+            return logits, loss
+        return logits, None
+
+
 class MiniCliffordAttractor(nn.Module):
     def __init__(self, config: GPTConfig, algebra_dim: int = 16):
         super().__init__()
@@ -517,6 +560,21 @@ def main():
                 n_layer=4,
                 n_head=4
             ), 'algebra_dim': 16},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
+        ),
+        BenchmarkConfig(
+            name='CausalSequenceBaseline',
+            model_fn=CausalSequenceBaseline,
+            model_kwargs={'config': GPTConfig(
+                vocab_size=len(tokenizer),
+                block_size=128,
+                n_embd=256,
+                n_layer=4,
+                n_head=4
+            )},
             batch_size=16,
             lr=1e-3,
             epochs=20,
