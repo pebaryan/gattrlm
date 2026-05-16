@@ -154,27 +154,44 @@ class CliffordAttractorLM(nn.Module):
         self,
         config: GPTConfig,
         algebra_config=None,
-        fast_mode: bool = True,
+        variant: str = "fast",
     ):
         super().__init__()
         self.config = config
+        self.variant = variant
         
         if algebra_config is None:
             from attractor.models.clifford_attractor import CliffordAttractorConfig
-            # Fast LM mode: keep the Clifford core, but shrink the fixed-point state
-            # and solver budget so training throughput stays usable.
-            channels = max(16, config.n_embd // 8) if fast_mode else max(32, config.n_embd // 4)
+            # The benchmark uses a small set of explicit Clifford variants so we can
+            # isolate whether quality is driven by the sequence mixer or the solver.
+            if variant not in {"fast", "no_mixer", "deep_solve"}:
+                raise ValueError(f"Unknown CliffordAttractorLM variant: {variant}")
+
+            channels = max(16, config.n_embd // 8)
+            hidden_channels = channels * 2
+            max_iter = 4
+            tol = 2e-3
+            anderson_m = 1
+            use_sequence_mixer = True
+
+            if variant == "no_mixer":
+                use_sequence_mixer = False
+            elif variant == "deep_solve":
+                max_iter = 8
+                tol = 1e-3
+                anderson_m = 2
+
             algebra_config = CliffordAttractorConfig(
                 p=3, q=0, r=0,
                 channels=channels,
-                hidden_channels=channels * 2,
+                hidden_channels=hidden_channels,
                 num_blocks=2,
                 num_rotors=2,
-                max_iter=4 if fast_mode else 10,
-                tol=2e-3 if fast_mode else 1e-3,
-                anderson_m=1 if fast_mode else 2,
+                max_iter=max_iter,
+                tol=tol,
+                anderson_m=anderson_m,
                 max_seq_len=config.block_size,
-                use_sequence_mixer=True,
+                use_sequence_mixer=use_sequence_mixer,
             )
         
         from attractor.models.clifford_attractor import CliffordAttractor
@@ -665,12 +682,42 @@ def main():
                 n_embd=256,
                 n_layer=4,
                 n_head=4
-            )},
+            ), 'variant': 'fast'},
             batch_size=16,
             lr=1e-3,
             epochs=20,
             max_train_batches=100,
             profile_batches=3
+        ),
+        BenchmarkConfig(
+            name='CliffordAttractor-LM-NoMixer',
+            model_fn=CliffordAttractorLM,
+            model_kwargs={'config': GPTConfig(
+                vocab_size=len(tokenizer),
+                block_size=128,
+                n_embd=256,
+                n_layer=4,
+                n_head=4
+            ), 'variant': 'no_mixer'},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
+        ),
+        BenchmarkConfig(
+            name='CliffordAttractor-LM-DeepSolve',
+            model_fn=CliffordAttractorLM,
+            model_kwargs={'config': GPTConfig(
+                vocab_size=len(tokenizer),
+                block_size=128,
+                n_embd=256,
+                n_layer=4,
+                n_head=4
+            ), 'variant': 'deep_solve'},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
         ),
     ]
 
