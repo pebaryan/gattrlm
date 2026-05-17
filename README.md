@@ -517,6 +517,19 @@ bash runs/run_training.sh launch_configs/attractor-small-140m.yaml attractor-sma
 
 Current benchmark note: for the Clifford LM path in this repo, the default benchmark setting is `CliffordAttractor-LM-24ch-LightSolve`. It has been the best speed/quality tradeoff we have measured so far, while the other Clifford entries remain as ablations for mixer, width, and solver depth.
 
+Benchmark summary on Wikitext-2 in `scabi`:
+
+| Model | Final eval loss | Time | Note |
+|---|---:|---:|---|
+| `RepoNativeGPT-Small` | `8.6983` | `47.5s` | fastest, weak validation |
+| `RepoNativeGPT-Medium` | `8.0046` | `67.8s` | slightly better, still weak validation |
+| `MiniCliffordAttractor` | `6.7621` | `35.9s` | simple Clifford proxy |
+| `CausalSequenceProxyBaseline` | `6.9677` | `73.8s` | non-Clifford causal stand-in |
+| `CliffordAttractor-LM-24ch-LightSolve` | `5.9553` | `210.2s` | best validation among the Clifford runs |
+| `Parcae-Small-Original` | `7.8179` | `408.0s` | best of the recovered original baselines |
+| `Attractor-Small-Original` | `10.1806` | `351.8s` | overfits hard |
+| `EQLM-Small-Original` | `10.4783` | `353.7s` | overfits hard |
+
 ### Sudoku & Maze Reasoning
 
 ```bash
