@@ -691,7 +691,7 @@ def main():
             max_train_batches=100
         ),
         BenchmarkConfig(
-            name='CliffordAttractor-LM-Fast',
+            name='CliffordAttractor-LM-24ch-LightSolve',
             model_fn=CliffordAttractorLM,
             model_kwargs={'config': GPTConfig(
                 vocab_size=len(tokenizer),
@@ -699,7 +699,7 @@ def main():
                 n_embd=256,
                 n_layer=4,
                 n_head=4
-            ), 'variant': 'fast'},
+            ), 'channels_override': 24, 'solver_override': 'light'},
             batch_size=16,
             lr=1e-3,
             epochs=20,
@@ -716,21 +716,6 @@ def main():
                 n_layer=4,
                 n_head=4
             ), 'channels_override': 24},
-            batch_size=16,
-            lr=1e-3,
-            epochs=20,
-            max_train_batches=100
-        ),
-        BenchmarkConfig(
-            name='CliffordAttractor-LM-24ch-LightSolve',
-            model_fn=CliffordAttractorLM,
-            model_kwargs={'config': GPTConfig(
-                vocab_size=len(tokenizer),
-                block_size=128,
-                n_embd=256,
-                n_layer=4,
-                n_head=4
-            ), 'channels_override': 24, 'solver_override': 'light'},
             batch_size=16,
             lr=1e-3,
             epochs=20,
