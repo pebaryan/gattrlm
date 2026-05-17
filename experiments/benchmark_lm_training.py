@@ -156,6 +156,7 @@ class CliffordAttractorLM(nn.Module):
         algebra_config=None,
         variant: str = "fast",
         channels_override: Optional[int] = None,
+        solver_override: Optional[str] = None,
     ):
         super().__init__()
         self.config = config
@@ -167,6 +168,8 @@ class CliffordAttractorLM(nn.Module):
             # isolate whether quality is driven by the sequence mixer or the solver.
             if variant not in {"fast", "no_mixer", "deep_solve"}:
                 raise ValueError(f"Unknown CliffordAttractorLM variant: {variant}")
+            if solver_override is not None and solver_override not in {"light", "default", "deep"}:
+                raise ValueError(f"Unknown CliffordAttractorLM solver_override: {solver_override}")
 
             channels = channels_override if channels_override is not None else max(16, config.n_embd // 8)
             hidden_channels = channels * 2
@@ -178,6 +181,19 @@ class CliffordAttractorLM(nn.Module):
             if variant == "no_mixer":
                 use_sequence_mixer = False
             elif variant == "deep_solve":
+                max_iter = 8
+                tol = 1e-3
+                anderson_m = 2
+
+            if solver_override == "light":
+                max_iter = 2
+                tol = 3e-3
+                anderson_m = 0
+            elif solver_override == "default":
+                max_iter = 4
+                tol = 2e-3
+                anderson_m = 1
+            elif solver_override == "deep":
                 max_iter = 8
                 tol = 1e-3
                 anderson_m = 2
@@ -700,6 +716,36 @@ def main():
                 n_layer=4,
                 n_head=4
             ), 'channels_override': 24},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
+        ),
+        BenchmarkConfig(
+            name='CliffordAttractor-LM-24ch-LightSolve',
+            model_fn=CliffordAttractorLM,
+            model_kwargs={'config': GPTConfig(
+                vocab_size=len(tokenizer),
+                block_size=128,
+                n_embd=256,
+                n_layer=4,
+                n_head=4
+            ), 'channels_override': 24, 'solver_override': 'light'},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
+        ),
+        BenchmarkConfig(
+            name='CliffordAttractor-LM-24ch-DeepSolve',
+            model_fn=CliffordAttractorLM,
+            model_kwargs={'config': GPTConfig(
+                vocab_size=len(tokenizer),
+                block_size=128,
+                n_embd=256,
+                n_layer=4,
+                n_head=4
+            ), 'channels_override': 24, 'solver_override': 'deep'},
             batch_size=16,
             lr=1e-3,
             epochs=20,
