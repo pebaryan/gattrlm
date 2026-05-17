@@ -270,6 +270,35 @@ class CausalSequenceProxyBaseline(nn.Module):
         return logits, None
 
 
+class ExternalRepoBaseline(nn.Module):
+    """Adapter for stronger repo-native baselines when their source is available.
+
+    The adapter uses the repo's `attractor.create_model(...)` factory so we can
+    benchmark Parcae/EQLM if the model implementation exists in the checkout or
+    installed package. If the source is missing, construction will fail and the
+    benchmark will skip the entry cleanly.
+    """
+
+    def __init__(self, model_name: str, model_kwargs: Optional[dict] = None):
+        super().__init__()
+        self.model_name = model_name
+        self.model_kwargs = model_kwargs or {}
+
+        import attractor
+        self.model = attractor.create_model(model_name, **self.model_kwargs)
+
+    def forward(self, idx, targets=None, pad_token_id=0):
+        out = self.model(idx, targets=targets, pad_token_id=pad_token_id)
+        if isinstance(out, tuple) and len(out) == 2:
+            logits, loss = out
+        elif isinstance(out, dict):
+            logits = out.get('logits')
+            loss = out.get('loss')
+        else:
+            logits, loss = out, None
+        return logits, loss
+
+
 class MiniCliffordAttractor(nn.Module):
     def __init__(self, config: GPTConfig, algebra_dim: int = 16):
         super().__init__()
@@ -526,7 +555,11 @@ def run_benchmark(config: BenchmarkConfig, tokenizer, texts, device):
     print('=' * 70)
 
     print('Creating model...')
-    model = config.model_fn(**config.model_kwargs)
+    try:
+        model = config.model_fn(**config.model_kwargs)
+    except Exception as e:
+        print('SKIPPING {}: could not create model ({})'.format(config.name, e))
+        return None
     model = model.to(device)
 
     num_params = sum(p.numel() for p in model.parameters())
@@ -630,6 +663,30 @@ def main():
         return
 
     benchmarks = [
+        BenchmarkConfig(
+            name='Parcae-Small-Optional',
+            model_fn=ExternalRepoBaseline,
+            model_kwargs={'model_name': 'parcae-small-140m', 'model_kwargs': {
+                'vocab_size': len(tokenizer),
+                'block_size': 128,
+            }},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
+        ),
+        BenchmarkConfig(
+            name='EQLM-Small-Optional',
+            model_fn=ExternalRepoBaseline,
+            model_kwargs={'model_name': 'eqlm-small-140m', 'model_kwargs': {
+                'vocab_size': len(tokenizer),
+                'block_size': 128,
+            }},
+            batch_size=16,
+            lr=1e-3,
+            epochs=20,
+            max_train_batches=100
+        ),
         BenchmarkConfig(
             name='RepoNativeGPT-Small',
             model_fn=RepoNativeGPTBaseline,
