@@ -515,6 +515,8 @@ Launch with:
 bash runs/run_training.sh launch_configs/attractor-small-140m.yaml attractor-small 2
 ```
 
+Current benchmark note: for the Clifford LM path in this repo, the default benchmark setting is `CliffordAttractor-LM-24ch-LightSolve`. It has been the best speed/quality tradeoff we have measured so far, while the other Clifford entries remain as ablations for mixer, width, and solver depth.
+
 ### Sudoku & Maze Reasoning
 
 ```bash
