@@ -27,6 +27,9 @@ Thumbs.db
 # Generated
 runs/
 
+# Vendored upstream
+.tmp_upstream_attractor/
+
 # Tooling
 .playwright-mcp/
 .pytest_cache/
