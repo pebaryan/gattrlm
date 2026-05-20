@@ -37,7 +37,7 @@ class GPTConfig:
     bias: bool = False
 
 
-class CasualSelfAttention(nn.Module):
+class CausalSelfAttention(nn.Module):
     def __init__(self, config: GPTConfig):
         super().__init__()
         assert config.n_embd % config.n_head == 0
@@ -72,7 +72,7 @@ class CasualSelfAttention(nn.Module):
 class TransformerBlock(nn.Module):
     def __init__(self, config: GPTConfig):
         super().__init__()
-        self.attn = CasualSelfAttention(config)
+        self.attn = CausalSelfAttention(config)
         self.ln1 = nn.LayerNorm(config.n_embd)
         self.ln2 = nn.LayerNorm(config.n_embd)
 

@@ -530,32 +530,6 @@ Benchmark summary on Wikitext-2 in `scabi`:
 | `Attractor-Small-Original` | `10.1806` | `351.8s` | overfits hard |
 | `EQLM-Small-Original` | `10.4783` | `353.7s` | overfits hard |
 
-### Sudoku & Maze Reasoning
-
-```bash
-torchrun --standalone --nproc_per_node=2 \
-    -m experiments.attractor_puzzles.trm.train_trm_deq \
-    --data_dir /path/to/sudoku-data \
-    --out_dir /path/to/output
-```
-
-### Clifford Sudoku
-
-```bash
-torchrun --nnodes=1 --nproc-per-node=1 \
-    experiments/attractor_puzzles/trm/train_clifford_trm.py \
-    --dataset-paths /path/to/sudoku-extreme \
-    --output-dir ./outputs/clifford-sudoku \
-    --p 3 --q 0 --channels 16 --num-blocks 3 \
-    --lr 1e-3 --deq-max-iter 30 --jacobian-reg-lambda 0.01
-```
-
-### ARC-AGI Puzzles
-
-```bash
-bash experiments/attractor_puzzles/launch_arc_deq.sh
-```
-
 ### Evaluation
 
 ```bash
@@ -575,8 +549,6 @@ gattrlm/
 │   └── __init__.py                  # Lazy exports for all public APIs
 ├── experiments/
 │   ├── clifford_toy_example.py      # Minimal working example
-│   ├── attractor_puzzles/           # Sudoku, Maze, ARC-AGI with TRM-DEQ
-│   └── eqlm_sudoku/                 # Sudoku via EQLM
 ├── tests/
 │   ├── test_clifford_attractor.py   # 65 tests: algebra, layers, DEQ, backward
 │   └── test_clifford_cga.py         # 47 tests: null basis, embedding, rotors, meet, gradients

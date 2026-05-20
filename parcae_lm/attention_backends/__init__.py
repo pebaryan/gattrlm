@@ -1,4 +1,1 @@
-from .interface import select_attention_implementation
-from .flash_attention import flash_attn
-
-__all__ = ["select_attention_implementation", "flash_attn"]
+from attractor.attention_backends import *  # noqa: F401,F403

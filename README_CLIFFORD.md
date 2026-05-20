@@ -48,30 +48,12 @@ python experiments/clifford_toy_example.py
 
 This trains a CliffordAttractor on a synthetic vector field fixed-point task. Output shows convergence and loss curves.
 
-## Training on Sudoku Puzzles
-
-```bash
-# First, build the Sudoku dataset:
-python experiments/attractor_puzzles/data/build_sudoku.py \
-    --output-dir /path/to/sudoku-extreme \
-    --subsample-size 1000 --num-aug 100
-
-# Then train the Clifford attractor:
-torchrun --nnodes=1 --nproc-per-node=1 \
-    experiments/attractor_puzzles/trm/train_clifford_trm.py \
-    --dataset-paths /path/to/sudoku-extreme \
-    --output-dir ./outputs/clifford-sudoku \
-    --p 3 --q 0 --channels 16 --num-blocks 3 \
-    --lr 1e-3 --deq-max-iter 30 --jacobian-reg-lambda 0.01
-```
-
 ## Key Files
 
 | File | Description |
 |---|---|
 | `attractor/models/clifford_attractor.py` | Core implementation: Clifford algebra operations, layers, config, and fixed-point solver |
 | `experiments/clifford_toy_example.py` | Minimal working example on synthetic data |
-| `experiments/attractor_puzzles/trm/train_clifford_trm.py` | Full training script for puzzle tasks with distributed support |
 | `README_CLIFFORD.md` | This file |
 
 ## CliffordAlgebra Module
