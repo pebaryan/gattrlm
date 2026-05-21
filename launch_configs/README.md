@@ -35,6 +35,7 @@ attractor-small-140m.yaml    → attractor-small-140m
 attractor-medium-370m.yaml   → attractor-medium-370m
 attractor-large-770m.yaml    → attractor-large-770m
 attractor-xlarge-1_3b.yaml   → attractor-xlarge-1_3b
+clifford-small-140m.yaml     → clifford-small-140m (hybrid: attention + Clifford MLP)
 eqlm-small-140m.yaml         → eqlm-small-140m (identical to attractor config)
 parcae-small-140m.yaml       → parcae-small-140m
 gpt-small-140m.yaml          → gpt-small-140m

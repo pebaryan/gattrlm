@@ -53,6 +53,8 @@ def _detect_hf_arch(repo_id: str) -> str:
     with open(cfg_path) as f:
         cfg = json.load(f)
     arch = cfg.get("architecture_class_name", "")
+    if arch == "CliffordLM" or "clifford" in repo_id.lower():
+        return "clifford"
     if arch in ("EQLM", "Attractor") or "attractor" in repo_id.lower() or "eqlm" in repo_id.lower():
         return "attractor"
     if arch == "Parcae":
@@ -74,12 +76,19 @@ def load_model(settings: CLISettings):
         tokenizer = AutoTokenizer.from_pretrained(settings.hf_path)
         return model, tokenizer
 
-    # Parcae/GPT/EQLM model from HuggingFace repo
+    # Parcae/GPT/EQLM/Clifford model from HuggingFace repo
     if settings.hf_repo is not None:
         arch = _detect_hf_arch(settings.hf_repo)
         print0(f"Loading from HuggingFace: {settings.hf_repo} (detected arch={arch})")
-        if arch in ("attractor", "eqlm"):
-            from receval.models.attractor import ModelingAttractor
+        if arch == "clifford":
+            from receval.models.clifford import ModelingCliffordLM
+            model = ModelingCliffordLM.from_pretrained(settings.hf_repo, device=settings.device)
+            settings.model_impl = "clifford"
+            if settings.eval_solver:
+                print0(f"Applying eval_solver overrides: {settings.eval_solver}")
+                model.apply_eval_solver(**settings.eval_solver)
+        elif arch in ("attractor", "eqlm"):
+            from receval.models.eqlm import ModelingEQLM
             model = ModelingEQLM.from_pretrained(settings.hf_repo, device=settings.device)
             settings.model_impl = "attractor"
             if settings.eval_solver:
@@ -113,8 +122,11 @@ def load_model(settings: CLISettings):
         from receval.models.parcae import ModelingParcae
         ModelClass = ModelingParcae
     elif settings.model_impl in ("attractor", "eqlm"):
-        from receval.models.attractor import ModelingAttractor
+        from receval.models.eqlm import ModelingEQLM
         ModelClass = ModelingEQLM
+    elif settings.model_impl == "clifford":
+        from receval.models.clifford import ModelingCliffordLM
+        ModelClass = ModelingCliffordLM
     else:
         raise ValueError(f"Unknown model_impl: {settings.model_impl}")
 
@@ -147,7 +159,7 @@ def load_model(settings: CLISettings):
         print0(f"Overriding model.config.mean_recurrence: {prev} -> "
                f"{model.config.mean_recurrence}")
 
-    if settings.model_impl in ("attractor", "eqlm") and settings.eval_solver:
+    if settings.model_impl in ("attractor", "eqlm", "clifford") and settings.eval_solver:
         print0(f"Applying eval_solver overrides: {settings.eval_solver}")
         model.apply_eval_solver(**settings.eval_solver)
 
@@ -230,7 +242,7 @@ def main():
     model, tokenizer = load_model(settings)
     all_results = {}
 
-    is_eqlm = (settings.model_impl in ("attractor", "eqlm") and hasattr(model, "solver_summary"))
+    is_eqlm = (settings.model_impl in ("attractor", "eqlm", "clifford") and hasattr(model, "solver_summary"))
 
     def _snapshot():
         return dict(model._solver_stats) if is_eqlm else None
@@ -374,7 +386,7 @@ def main():
                        f"calls={d['calls']} samples={d['samples']}")
         print0(f"Task {task} completed in {time.time() - t0:.2f}s")
 
-    if settings.model_impl in ("attractor", "eqlm") and hasattr(model, "solver_summary"):
+    if settings.model_impl in ("attractor", "eqlm", "clifford") and hasattr(model, "solver_summary"):
         stats = model.solver_summary()
         if stats["calls"] > 0:
             all_results["eqlm_solver"] = stats

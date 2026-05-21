@@ -147,6 +147,44 @@ def _tiny_attractor_config(**overrides):
     return cfg
 
 
+def _tiny_clifford_lm_config(**overrides):
+    """Minimal CliffordLM config for fast tests."""
+    cfg = attractor.create_config("clifford-small-140m")
+    defaults = dict(
+        n_embd=64,
+        n_backbone_layers=1,
+        n_fp_blocks=1,
+        num_attention_heads=2,
+        num_key_value_heads=2,
+        intermediate_size=128,
+        block_size=32,
+        vocab_size=256,
+        padding_multiple=64,
+        tie_embeddings=True,
+        init_strategy="scaled-zero",
+        max_iter=5,
+        min_iter=2,
+        tol=1e-2,
+        solver="fpi",
+        backward_type="onestep",
+        # Tiny Clifford sublayer: Cl(3,0), 4 channels * 8 blades = 32 hidden
+        clifford_p=3,
+        clifford_q=0,
+        clifford_r=0,
+        n_clifford_channels=4,
+        n_clifford_hidden=4,
+        use_fused_head="",
+    )
+    for k, v in defaults.items():
+        setattr(cfg, k, v)
+    from dataclasses import replace
+    cfg = replace(cfg)
+    for k, v in overrides.items():
+        setattr(cfg, k, v)
+    cfg.__post_init__()
+    return cfg
+
+
 def _check_finite_grads(model):
     """Assert parameters that received gradients have finite values.
 
@@ -761,6 +799,216 @@ class TestAttractor:
         fp_params = [p for p in model.transformer.core_block.parameters()]
         for p in fp_params:
             assert getattr(p, "_fp_head", False), f"FP param lacking _fp_head tag"
+
+
+# ========================================================================
+#  CliffordLM Tests
+# ========================================================================
+
+
+class TestCliffordLM:
+    """Verify CliffordLM (Attractor + Clifford MLP sublayer)."""
+
+    def test_config_creation(self):
+        cfg = _tiny_clifford_lm_config()
+        assert cfg.n_embd == 64
+        assert cfg.clifford_p == 3 and cfg.clifford_q == 0
+        assert cfg.n_clifford_channels == 4
+        assert cfg.padded_vocab_size is not None
+
+    def test_model_construction(self):
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        assert isinstance(model, torch.nn.Module)
+        _check_no_nan_params(model)
+
+    def test_subclass_of_attractor(self):
+        """CliffordLM inherits from Attractor — confirms the IFT/solver path is shared."""
+        from attractor.models.attractor.attractor import Attractor
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        assert isinstance(model, Attractor), "CliffordLM must subclass Attractor"
+
+    def test_fp_block_is_clifford(self):
+        """Each FP block in the head must be a CliffordFPBlock."""
+        from attractor.models.clifford_lm.clifford_lm import CliffordFPBlock
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        for blk in model.transformer.core_block:
+            assert isinstance(blk, CliffordFPBlock)
+            assert blk.mlp.__class__.__name__ == "CliffordSublayer"
+
+    def test_forward_shape(self):
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        model.eval()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, return_logits=True)
+        assert out["logits"].shape == (2, 8, cfg.padded_vocab_size)
+
+    def test_forward_with_labels(self):
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        model.eval()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        assert out["loss"].item() > 0.0
+        assert "log_ppl" in out
+
+    def test_backward(self):
+        """Backward pass produces finite gradients on every parameter."""
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        out["loss"].backward()
+        _check_finite_grads(model)
+
+    def test_training_step(self):
+        """Forward + backward + optimizer step keeps params finite."""
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        out["loss"].backward()
+        opt.step()
+        opt.zero_grad()
+        _check_no_nan_params(model)
+
+    def test_anderson_solver(self):
+        """Works with Anderson acceleration."""
+        cfg = _tiny_clifford_lm_config(solver="anderson", max_iter=5, min_iter=2, tol=1e-2)
+        model = cfg.construct_model()
+        model.eval()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        assert out["loss"].item() > 0.0
+
+    def test_fp_params_tagged(self):
+        """FP-head parameters carry the _fp_head tag — confirms the
+        optimizer-grouping plumbing inherited from Attractor still applies."""
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        for p in model.transformer.core_block.parameters():
+            assert getattr(p, "_fp_head", False)
+
+    def test_different_signatures(self):
+        """Works across a few Clifford algebra signatures."""
+        for p, q in [(2, 0), (3, 0), (1, 1)]:
+            cfg = _tiny_clifford_lm_config(clifford_p=p, clifford_q=q)
+            model = cfg.construct_model()
+            model.eval()
+            x = torch.randint(0, cfg.vocab_size, (1, 4))
+            out = model(x, return_logits=True)
+            assert out["logits"] is not None
+
+    def test_top_level_export(self):
+        """attractor.CliffordLM lazy-export is wired."""
+        cls = attractor.CliffordLM
+        assert cls is not None
+        cfg_cls = attractor.CliffordLMConfig
+        assert cfg_cls is not None
+
+
+# ========================================================================
+#  NativeCliffordLM Tests (Path B: Clifford attention inside FP block)
+# ========================================================================
+
+
+def _tiny_native_clifford_config(**overrides):
+    cfg = _tiny_clifford_lm_config(
+        native_attention=True,
+        n_clifford_attn_heads=2,
+        n_clifford_attn_channels_per_head=2,
+        **overrides,
+    )
+    return cfg
+
+
+class TestNativeCliffordLM:
+    """Verify NativeCliffordLM (Clifford attention + Clifford MLP in FP block)."""
+
+    def test_construction_dispatches_to_native(self):
+        from attractor.models.clifford_lm import NativeCliffordLM
+        cfg = _tiny_native_clifford_config()
+        model = cfg.construct_model()
+        assert isinstance(model, NativeCliffordLM)
+
+    def test_fp_block_has_clifford_attention(self):
+        from attractor.models.clifford_lm import (
+            NativeCliffordFPBlock, CliffordSelfAttention,
+        )
+        cfg = _tiny_native_clifford_config()
+        model = cfg.construct_model()
+        for blk in model.transformer.core_block:
+            assert isinstance(blk, NativeCliffordFPBlock)
+            assert isinstance(blk.attn, CliffordSelfAttention)
+            assert blk.mlp.__class__.__name__ == "CliffordSublayer"
+
+    def test_forward(self):
+        cfg = _tiny_native_clifford_config()
+        model = cfg.construct_model()
+        model.eval()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, return_logits=True)
+        assert out["logits"].shape == (2, 8, cfg.padded_vocab_size)
+
+    def test_backward(self):
+        cfg = _tiny_native_clifford_config()
+        model = cfg.construct_model()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        out["loss"].backward()
+        _check_finite_grads(model)
+
+    def test_training_step(self):
+        cfg = _tiny_native_clifford_config()
+        model = cfg.construct_model()
+        opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        out["loss"].backward()
+        opt.step()
+        opt.zero_grad()
+        _check_no_nan_params(model)
+
+    def test_causal_attention(self):
+        """Clifford self-attention must be causal: token i's output cannot
+        depend on tokens j > i. Perturbing a future token must not change
+        an earlier token's logits."""
+        cfg = _tiny_native_clifford_config()
+        model = cfg.construct_model()
+        model.eval()
+        x = torch.randint(0, cfg.vocab_size, (1, 8))
+        x_perturbed = x.clone()
+        # Swap the last token to something different
+        x_perturbed[0, -1] = (x[0, -1] + 1) % cfg.vocab_size
+        with torch.no_grad():
+            out1 = model(x, return_logits=True)["logits"]
+            out2 = model(x_perturbed, return_logits=True)["logits"]
+        # Logits at positions 0..6 must be identical (only position 7 may differ)
+        assert torch.allclose(out1[:, :-1], out2[:, :-1], atol=1e-5), \
+            "Clifford attention is not causal — future tokens leak into past."
+
+    def test_different_signatures(self):
+        for p, q in [(2, 0), (3, 0), (1, 1)]:
+            cfg = _tiny_native_clifford_config(clifford_p=p, clifford_q=q)
+            model = cfg.construct_model()
+            model.eval()
+            x = torch.randint(0, cfg.vocab_size, (1, 4))
+            out = model(x, return_logits=True)
+            assert out["logits"] is not None
+
+    def test_top_level_export(self):
+        cls = attractor.NativeCliffordLM
+        assert cls is not None
 
 
 # ========================================================================

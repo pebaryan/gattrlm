@@ -137,6 +137,9 @@ class Config:
             elif arch_class in ("Attractor", "EQLM"):
                 from attractor.models.attractor.config import AttractorConfig
                 return AttractorConfig.from_name(name, **kwargs)
+            elif arch_class == "CliffordLM":
+                from attractor.models.clifford_lm.config import CliffordLMConfig
+                return CliffordLMConfig.from_name(name, **kwargs)
         
         rope_settings = {}
         for key, value in kwargs.items():

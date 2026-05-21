@@ -112,6 +112,21 @@ def __getattr__(name):
     if name == "EQLMConfig":
         from attractor.models.eqlm.config import EQLMConfig
         return EQLMConfig
+    if name == "CliffordLM":
+        from attractor.models.clifford_lm import CliffordLM
+        return CliffordLM
+    if name == "CliffordLMConfig":
+        from attractor.models.clifford_lm import CliffordLMConfig
+        return CliffordLMConfig
+    if name == "create_clifford_lm":
+        from attractor.models.clifford_lm import create_clifford_lm
+        return create_clifford_lm
+    if name == "NativeCliffordLM":
+        from attractor.models.clifford_lm import NativeCliffordLM
+        return NativeCliffordLM
+    if name == "create_native_clifford_lm":
+        from attractor.models.clifford_lm import create_native_clifford_lm
+        return create_native_clifford_lm
     if name == "CliffordAttractor":
         from attractor.models.clifford_attractor import CliffordAttractor
         return CliffordAttractor

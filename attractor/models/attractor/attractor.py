@@ -110,11 +110,9 @@ class Attractor(nn.Module):
             for i in range(config.n_layers_in_prelude)
         )
         core_block = nn.ModuleList(
-            FixedPointBlock(
+            self._make_fp_block(
                 config,
                 layer_id=config.n_layers_in_prelude + i,
-                layer_scale_init=config.layer_scale_init,
-                gamma_max=config.gamma_max,
             ) for i in range(config.n_layers_in_recurrent_block)
         )
         coda = nn.ModuleList(
@@ -177,6 +175,18 @@ class Attractor(nn.Module):
         self._last_solver_info: dict[str, Any] = {}
 
         self.reset_parameters()
+
+    def _make_fp_block(self, config, layer_id: int) -> nn.Module:
+        """Construct one block of the weight-tied attractor head.
+
+        Subclasses override this to plug in a different FP block class
+        (e.g. CliffordFPBlock) without copy-pasting the rest of __init__."""
+        return FixedPointBlock(
+            config,
+            layer_id=layer_id,
+            layer_scale_init=config.layer_scale_init,
+            gamma_max=config.gamma_max,
+        )
 
     def _precompute_freqs_cis(self) -> Tensor:
         blocks = self.transformer.prelude
