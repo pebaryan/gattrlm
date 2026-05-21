@@ -1,0 +1,97 @@
+# Baseline Attractor run on the same wikitext recipe used for
+# clifford-small-140m-wikitext-long.yaml. Identical training settings
+# (steps, batch, seq, LR, solver depth) — only the model architecture
+# differs: standard Attractor MLP vs CliffordLM's Clifford MLP sublayer.
+# Use this to A/B the two architectures at matched compute.
+#
+# Run with:
+#   set WANDB_MODE=disabled
+#   set LOCAL_WORLD_SIZE=1
+#   set HF_HUB_OFFLINE=1
+#   python scripts/train.py --config launch_configs/attractor-small-140m-wikitext-long.yaml
+
+run_name: attractor-small-140m-wikitext-long
+resume: False
+max_tokens: 0
+max_steps: 500
+seed: 42
+out_dir: "D:/code/gattrlm/runs/attractor-small-140m-wikitext-long"
+model_name: attractor-small-140m
+model_impl: dynamic
+block_size: 512
+
+partial_depth_eval: []
+
+model_overwrite:
+  vocab_size: 32768
+  block_size: 512
+  max_iter: 16
+  min_iter: 4
+  backward_max_iter: 16
+  backward_min_iter: 4
+
+world_batch_size: 8
+micro_batch_size: 8
+
+optimizer: MuonAdamW
+optim_config:
+  lr: 4e-3
+  weight_decay: 0.0
+  betas: [0.8, 0.95]
+  eps: 1e-10
+  muon_lr: 4e-3
+  muon_momentum: 0.95
+  muon_wd: 0.2
+  muon_ns_steps: 5
+
+warmup_steps: 0.05
+cooldown_steps: 0.2
+lr_schedule: trapezoid
+min_lr: 0
+grad_clip: 1.0
+no_weight_decay_for_bias_and_norm_params: True
+
+z_regularization: 0
+label_smoothing: 0
+
+fabric_strategy: single
+fabric_precision: bf16-mixed
+fabric:
+  optim_sharding: False
+
+compile_model: False
+gradient_checkpointing: False
+
+loss_guardrail_active: True
+skip_nonfinite_grads: True
+allow_nonfinite_loss: False
+
+logger_name: wandb
+logger_project: clifford-local
+model_telemetry: True
+log_step_interval: 20
+save_step_interval: 500
+eval_step_interval: 250
+eval_iters: 8
+save_last_step: True
+
+all_block_size_tensors: False
+pack_sequences: True
+
+data_config:
+  train_data:
+    - type: pqds-pure
+      prefix: "train"
+      weight: 1
+      data_dir: "D:/hf_cache/huggingface/hub/datasets--Salesforce--wikitext/snapshots/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-v1"
+      data_signature:
+        keys: ["text"]
+  val_data:
+    - type: pqds-pure
+      prefix: "validation"
+      weight: 1
+      data_dir: "D:/hf_cache/huggingface/hub/datasets--Salesforce--wikitext/snapshots/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-103-v1"
+      data_signature:
+        keys: ["text"]
+
+tokenizer_path: "SandyResearch/parcae-tokenizer"

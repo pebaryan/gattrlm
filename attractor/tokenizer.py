@@ -79,9 +79,11 @@ class Tokenizer:
     def from_checkpoint(cls, checkpoint_dir: Union[Path, str]):
         from huggingface_hub import hf_hub_download
 
-        # Preserve the raw string for HF Hub lookup — Path() on Windows
-        # converts "org/repo" to "org\repo" and HF rejects backslashes.
-        raw = str(checkpoint_dir)
+        # Preserve the raw string for HF Hub lookup. On Windows, Path() turns
+        # "org/repo" into "org\repo" and HF rejects the backslash, so we
+        # normalize separators when the string looks like a hub repo id
+        # (no drive letter, no absolute/relative prefix).
+        raw = str(checkpoint_dir).replace("\\", "/")
         checkpoint_dir = Path(checkpoint_dir)
 
         if not checkpoint_dir.exists():
