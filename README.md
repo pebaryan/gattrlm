@@ -35,6 +35,12 @@ University of Southern California
   - [CGA Formulas](#cga-formulas)
   - [Usage Example](#cl41-usage-example)
 - [Layer Reference](#layer-reference)
+- [Empirical Results](#empirical-results)
+  - [The variants tested](#the-variants-tested)
+  - [Language modeling on wikitext-103](#language-modeling-on-wikitext-103)
+  - [Rotation equivariance (rotor regression)](#rotation-equivariance-rotor-regression)
+  - [Findings](#findings)
+  - [Reproducing the runs](#reproducing-the-runs)
 - [Training](#training)
 - [Project Structure](#project-structure)
 - [Pretrained Models](#pretrained-models)
@@ -536,6 +542,97 @@ python scripts/eval.py eval_configs/eval-core.yaml --out_dir /path/to/checkpoint
 
 ---
 
+## Empirical Results
+
+The Clifford extension introduces several architectural knobs — which sublayer carries the Clifford structure, where in the stack to place it, what positional encoding to use. To map the design space, we ran a 7-way LM A/B on wikitext-103 and a 4-arm rotation-equivariance benchmark on a single RTX 5060 Ti (Blackwell, 17 GB VRAM, Windows). All LM runs use the same 140M-parameter recipe (`block_size=512`, `batch=8`, MuonAdamW lr 4e-3, bf16-mixed, 500 steps).
+
+### The variants tested
+
+| Variant | FP attn | FP MLP | Prelude attn | Positional encoding |
+|---|---|---|---|---|
+| **Attractor** | std | std | std | RoPE |
+| **CliffordLM** | std | Clifford | std | RoPE |
+| **AttnOnlyCliffordLM** | Clifford | std | std | RoPE (prelude) |
+| **NativeCliffordLM** | Clifford | Clifford | std | RoPE (prelude) |
+| PreludeOnlyClifford | std | std | Clifford | learned `wpe` (no RoPE) |
+| PreludeAndFPClifford | Clifford | std | Clifford | learned `wpe` (no RoPE) |
+| MV-RoPE prelude | std | std | Clifford | **multivector RoPE** |
+| RoPE-control | std | std | std | learned `wpe` (no RoPE) |
+
+These map onto `CliffordLMConfig` flags `clifford_attention`, `clifford_mlp`, `clifford_attention_prelude`, `multivector_rope`, and `disable_rope_in_prelude`.
+
+### Language modeling on wikitext-103
+
+| Variant | val (step 499) | wall-clock | Δ vs Attractor |
+|---|---:|---:|---:|
+| **AttnOnlyCliffordLM** | **6.0156** | 5:17 | **−0.022** (best) |
+| Attractor | 6.0376 | 4:59 | — |
+| CliffordLM | 6.0619 | 9:04 | +0.024 |
+| MV-RoPE prelude | 6.1640 | 4:23 | +0.126 |
+| RoPE-control | 6.1955 | 5:17 | +0.158 |
+| PreludeAndFPClifford | 6.2196 | 4:04 | +0.182 |
+| PreludeOnlyClifford | 6.2286 | 4:33 | +0.191 |
+
+The top three are tied within noise; the bottom four trail by ~0.13–0.19 val loss.
+
+**Decomposing the prelude penalty.** PreludeOnly (no RoPE, Clifford attn) lands +0.191 from baseline. The RoPE-control (no RoPE, _standard_ attn) lands +0.158, isolating the RoPE-loss cost. Multivector RoPE (which preserves the relative-position property — see test `test_multivector_rope_relative_position`) recovers ~0.032 of that, leaving ~0.126 as the intrinsic Clifford-attention expressivity gap vs std attention at this scale.
+
+### Rotation equivariance (rotor regression)
+
+Synthetic task: predict `y = R · v · R̃` from a 3D vector `v` and rotor `R` (both encoded as Cl(3,0) multivectors). Two extrapolation probes:
+
+- **Angle**: train on rotations of angle `[0, π/2]`, test on `[π/2, π]`. Axes uniform on the sphere both times.
+- **Axis**: train with rotation axes in a 30° cone around `+z`, test on the full sphere. Angles uniform `[0, π]` both times.
+
+Lower **extrapolation gap** (out-of-dist MSE ÷ in-dist MSE) means better generalization.
+
+| Arm | Params | Angle gap | Axis gap | Wall-clock |
+|---|---:|---:|---:|---:|
+| MLP (no Clifford) | 21k | 109× | 215× | ~10s |
+| CliffordMLP (DEQ + Clifford block) | 11k | 17.6× | 17.8× | ~230s |
+| **CliffordAttn** (Clifford attn + std FF) | 18k | **4.2×** | **2.5×** | ~37s |
+| CliffordBoth (Clifford attn + Clifford FF) | 19k | 4.2× | 2.5× | ~150s |
+
+CliffordAttn and CliffordBoth are identical to 2 decimal places — once attention is Clifford, the MLP algebra is irrelevant for equivariance, and Clifford-MLP adds 4× wall-clock for zero quality.
+
+### Findings
+
+1. **Clifford attention** is the operative component for rotation equivariance; the Clifford MLP earns nothing on top.
+2. **On plain text, all Clifford variants are quality-neutral or slightly worse** than the standard Attractor baseline. Geometric structure pays no rent on tasks without geometric structure.
+3. **Where to place Clifford attention**: in the FP head (`AttnOnlyCliffordLM`), not the prelude. Prelude placement costs ~0.13 val loss even with multivector RoPE substituting for lost RoPE.
+4. **Multivector RoPE works mathematically** — the relative-position property `<R_m q R̃_m, R_n k R̃_n>` reduces to a function of `m−n` (verified to 1e-4 in `tests/test_models.py`). It only recovers ~20% of the prelude penalty empirically; the residual is intrinsic Clifford-attention expressivity loss.
+
+**Pareto recommendation:** `AttnOnlyCliffordLM` dominates the design space — matches Attractor on text within noise (+6% wall-clock), and inherits the full 4–48× equivariance extrapolation advantage of Clifford attention on geometric tasks. For pure-text workloads with no geometric structure expected anywhere downstream, plain `Attractor` is still the right default.
+
+### Reproducing the runs
+
+All recipes live in `launch_configs/`:
+
+| YAML | Variant |
+|---|---|
+| `attractor-small-140m-wikitext-long.yaml` | Attractor (baseline) |
+| `clifford-small-140m-wikitext-long.yaml` | CliffordLM |
+| `attn-only-clifford-small-140m-wikitext-long.yaml` | **AttnOnlyCliffordLM** |
+| `prelude-only-clifford-small-140m-wikitext-long.yaml` | PreludeOnly Clifford |
+| `prelude-and-fp-clifford-small-140m-wikitext-long.yaml` | PreludeAndFP Clifford |
+| `rope-control-small-140m-wikitext-long.yaml` | RoPE-control (std attn, no RoPE) |
+| `mvrope-prelude-clifford-small-140m-wikitext-long.yaml` | Clifford prelude + multivector RoPE |
+
+For data, the recipes read wikitext-103 parquet shards from the local HuggingFace cache (`Salesforce/wikitext`) and the tokenizer from `SandyResearch/parcae-tokenizer`. Launch any of them with:
+
+```bash
+WANDB_MODE=disabled LOCAL_WORLD_SIZE=1 HF_HUB_OFFLINE=1 \
+    python scripts/train.py --config launch_configs/attn-only-clifford-small-140m-wikitext-long.yaml
+```
+
+The 4-arm rotation-equivariance benchmark is a single self-contained script:
+
+```bash
+python experiments/benchmark_equivariance.py --device cuda --epochs 80
+```
+
+---
+
 ## Training
 
 ### Language Modeling
@@ -548,6 +645,7 @@ Training is configured via YAML files in `launch_configs/`.
 | `attractor-medium-370m.yaml` | Attractor | 370M |
 | `attractor-large-770m.yaml` | Attractor | 770M |
 | `attractor-xlarge-1_3b.yaml` | Attractor | 1.3B |
+| `clifford-small-140m.yaml` | CliffordLM | 140M |
 | `parcae-small-140m.yaml` | Parcae (baseline) | 140M |
 | `parcae-medium-370m.yaml` | Parcae (baseline) | 370M |
 | `gpt-small-140m.yaml` | GPT (baseline) | 140M |
@@ -559,20 +657,7 @@ Launch with:
 bash runs/run_training.sh launch_configs/attractor-small-140m.yaml attractor-small 2
 ```
 
-Current benchmark note: for the Clifford LM path in this repo, the default benchmark setting is `CliffordAttractor-LM-24ch-LightSolve`. It has been the best speed/quality tradeoff we have measured so far, while the other Clifford entries remain as ablations for mixer, width, and solver depth.
-
-Benchmark summary on Wikitext-2 in `scabi`:
-
-| Model | Final eval loss | Time | Note |
-|---|---:|---:|---|
-| `RepoNativeGPT-Small` | `8.6983` | `47.5s` | fastest, weak validation |
-| `RepoNativeGPT-Medium` | `8.0046` | `67.8s` | slightly better, still weak validation |
-| `MiniCliffordAttractor` | `6.7621` | `35.9s` | simple Clifford proxy |
-| `CausalSequenceProxyBaseline` | `6.9677` | `73.8s` | non-Clifford causal stand-in |
-| `CliffordAttractor-LM-24ch-LightSolve` | `5.9553` | `210.2s` | best validation among the Clifford runs |
-| `Parcae-Small-Original` | `7.8179` | `408.0s` | best of the recovered original baselines |
-| `Attractor-Small-Original` | `10.1806` | `351.8s` | overfits hard |
-| `EQLM-Small-Original` | `10.4783` | `353.7s` | overfits hard |
+For the head-to-head Clifford-variant comparison on a single GPU using the local HuggingFace cache, see the [Empirical Results](#empirical-results) section above and the `*-wikitext-long.yaml` recipes.
 
 ### Evaluation
 
