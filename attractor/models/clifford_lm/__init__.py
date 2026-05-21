@@ -8,6 +8,7 @@ from .native import (
     NativeCliffordLM,
     create_native_clifford_lm,
 )
+from .attn_only import AttnOnlyCliffordFPBlock
 
 __all__ = [
     "CliffordLMConfig",
@@ -17,6 +18,7 @@ __all__ = [
     "CliffordSelfAttention",
     "NativeCliffordFPBlock",
     "NativeCliffordLM",
+    "AttnOnlyCliffordFPBlock",
     "create_clifford_lm",
     "create_native_clifford_lm",
 ]

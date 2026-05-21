@@ -103,15 +103,34 @@ class CliffordFPBlock(FixedPointBlock):
 
 
 class CliffordLM(Attractor):
-    """Attractor LM with Clifford MLP sublayers in the fixed-point head.
+    """Attractor LM with a flag-selected Clifford FP head.
 
-    All Attractor behavior — IFT, Anderson solver, optimizer param tagging,
-    monitoring, loss heads — is inherited unchanged. The only override is
-    the FP block factory.
+    The two sublayers of the FP block can independently be standard or
+    Clifford-aware (see CliffordLMConfig.clifford_attention /
+    .clifford_mlp). All other Attractor machinery — IFT, Anderson solver,
+    optimizer param tagging, monitoring, loss heads — is inherited.
     """
 
     def _make_fp_block(self, config, layer_id: int) -> nn.Module:
-        return CliffordFPBlock(
+        ca = bool(getattr(config, "clifford_attention", False))
+        cm = bool(getattr(config, "clifford_mlp", True))
+
+        if ca and cm:
+            # Both sublayers Clifford. Defined in native.py to keep the
+            # CliffordSelfAttention import local to that module.
+            from attractor.models.clifford_lm.native import NativeCliffordFPBlock
+            cls = NativeCliffordFPBlock
+        elif ca and not cm:
+            from attractor.models.clifford_lm.attn_only import AttnOnlyCliffordFPBlock
+            cls = AttnOnlyCliffordFPBlock
+        elif cm and not ca:
+            cls = CliffordFPBlock
+        else:
+            # Neither sublayer is Clifford. Fall back to the standard
+            # FixedPointBlock — useful for sanity-checking flag plumbing.
+            cls = FixedPointBlock
+
+        return cls(
             config,
             layer_id=layer_id,
             layer_scale_init=config.layer_scale_init,

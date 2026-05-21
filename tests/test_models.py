@@ -1012,6 +1012,85 @@ class TestNativeCliffordLM:
 
 
 # ========================================================================
+#  AttnOnlyCliffordLM Tests
+# ========================================================================
+
+
+def _tiny_attn_only_clifford_config(**overrides):
+    """Clifford attention + STANDARD MLP variant of CliffordLM."""
+    return _tiny_clifford_lm_config(
+        clifford_attention=True,
+        clifford_mlp=False,
+        n_clifford_attn_heads=2,
+        n_clifford_attn_channels_per_head=2,
+        **overrides,
+    )
+
+
+class TestAttnOnlyCliffordLM:
+    """Verify the AttnOnly Clifford variant: Clifford attn + std MLP in FP block."""
+
+    def test_dispatch(self):
+        """Dispatches to CliffordLM (not NativeCliffordLM) because clifford_mlp=False."""
+        from attractor.models.clifford_lm import (
+            CliffordLM, NativeCliffordLM, AttnOnlyCliffordFPBlock,
+        )
+        cfg = _tiny_attn_only_clifford_config()
+        model = cfg.construct_model()
+        assert isinstance(model, CliffordLM)
+        assert not isinstance(model, NativeCliffordLM)
+        for blk in model.transformer.core_block:
+            assert isinstance(blk, AttnOnlyCliffordFPBlock)
+
+    def test_fp_block_sublayers(self):
+        """Attn is Clifford, MLP is standard."""
+        from attractor.models.clifford_lm import CliffordSelfAttention
+        cfg = _tiny_attn_only_clifford_config()
+        model = cfg.construct_model()
+        for blk in model.transformer.core_block:
+            assert isinstance(blk.attn, CliffordSelfAttention)
+            # The standard MLP class name varies (BaseMLP); just ensure it is
+            # not the CliffordSublayer.
+            assert blk.mlp.__class__.__name__ != "CliffordSublayer"
+
+    def test_forward_backward(self):
+        cfg = _tiny_attn_only_clifford_config()
+        model = cfg.construct_model()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        out["loss"].backward()
+        _check_finite_grads(model)
+
+    def test_causal_attention(self):
+        """Perturb the last token; earlier-position logits must be unchanged."""
+        cfg = _tiny_attn_only_clifford_config()
+        model = cfg.construct_model()
+        model.eval()
+        x = torch.randint(0, cfg.vocab_size, (1, 8))
+        x_perturbed = x.clone()
+        x_perturbed[0, -1] = (x[0, -1] + 1) % cfg.vocab_size
+        with torch.no_grad():
+            out1 = model(x, return_logits=True)["logits"]
+            out2 = model(x_perturbed, return_logits=True)["logits"]
+        assert torch.allclose(out1[:, :-1], out2[:, :-1], atol=1e-5)
+
+    def test_native_attention_alias(self):
+        """The legacy native_attention=True flag still works and sets clifford_attention=True."""
+        cfg = _tiny_clifford_lm_config(
+            native_attention=True,
+            clifford_mlp=False,
+            n_clifford_attn_heads=2,
+            n_clifford_attn_channels_per_head=2,
+        )
+        assert cfg.clifford_attention is True
+        from attractor.models.clifford_lm import AttnOnlyCliffordFPBlock
+        model = cfg.construct_model()
+        for blk in model.transformer.core_block:
+            assert isinstance(blk, AttnOnlyCliffordFPBlock)
+
+
+# ========================================================================
 #  Cross-Model Tests
 # ========================================================================
 

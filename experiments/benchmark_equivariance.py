@@ -50,6 +50,7 @@ from attractor.models.clifford_attractor import (
     _solve_fixed_point,
 )
 from attractor.models.clifford_lm.native import CliffordSelfAttention
+from attractor.models.clifford_lm.clifford_lm import CliffordSublayer
 
 
 # Indices of e1, e2, e3 in Cl(3,0)
@@ -279,6 +280,55 @@ class NativeCliffordRegressor(nn.Module):
         return self.out_proj(h)                  # [B, 8]
 
 
+class FullCliffordRegressor(nn.Module):
+    """Same transformer scaffold as NativeCliffordRegressor, but BOTH sublayers
+    are Clifford: Clifford self-attention + CliffordSublayer (rotor + GP +
+    geometric-GELU + blade selector) instead of a standard FF. Mirrors the
+    LM-side NativeCliffordLM (= clifford_attention=True + clifford_mlp=True).
+    """
+
+    def __init__(
+        self,
+        algebra: CliffordAlgebra,
+        n_embd: int = 8,
+        n_heads: int = 4,
+        channels_per_head: int = 4,
+        n_layers: int = 4,
+        clifford_mlp_channels: int = 4,
+    ):
+        super().__init__()
+        self.n_embd = n_embd
+        self.D = algebra.dim
+        assert n_embd == self.D
+
+        self.layers = nn.ModuleList()
+        for _ in range(n_layers):
+            block = nn.ModuleDict(dict(
+                norm1=nn.LayerNorm(n_embd),
+                attn=CliffordSelfAttention(algebra, n_embd, n_heads, channels_per_head),
+                norm2=nn.LayerNorm(n_embd),
+                ff=CliffordSublayer(
+                    algebra=algebra,
+                    in_dim=n_embd,
+                    channels=clifford_mlp_channels,
+                    hidden_channels=clifford_mlp_channels,
+                ),
+            ))
+            self.layers.append(block)
+
+        self.out_norm = nn.LayerNorm(n_embd)
+        self.out_proj = nn.Linear(n_embd, self.D)
+
+    def forward(self, x_features: torch.Tensor) -> torch.Tensor:
+        B = x_features.shape[0]
+        x = x_features.view(B, 2, self.n_embd)
+        for blk in self.layers:
+            x = x + blk["attn"](blk["norm1"](x))
+            x = x + blk["ff"](blk["norm2"](x))
+        h = self.out_norm(x[:, 0])
+        return self.out_proj(h)
+
+
 def count_params(m: nn.Module) -> int:
     return sum(p.numel() for p in m.parameters())
 
@@ -441,10 +491,29 @@ def main():
             ff_mult=2,
         )
 
+    def build_full():
+        return FullCliffordRegressor(
+            algebra,
+            n_embd=algebra.dim,
+            n_heads=4,
+            channels_per_head=4,
+            n_layers=4,
+            clifford_mlp_channels=4,
+        )
+
+    # Naming maps the ablation axes onto the regressor arms:
+    #   MLP            : no Clifford anywhere (control)
+    #   CliffordMLP    : DEQ + CliffordAttractorBlock (Clifford ops in the block,
+    #                    no attention) — closest analog of CliffordLM
+    #   CliffordAttn   : Clifford attention + std FF (no DEQ) — analog of
+    #                    AttnOnlyCliffordLM
+    #   CliffordBoth   : Clifford attention + Clifford FF (no DEQ) — analog of
+    #                    NativeCliffordLM
     builders = {
         "MLP": build_mlp,
-        "Clifford": build_clif,
-        "NativeClifford": build_native,
+        "CliffordMLP": build_clif,
+        "CliffordAttn": build_native,
+        "CliffordBoth": build_full,
     }
 
     # --- Probe 1: angle extrapolation ---------------------------------------
