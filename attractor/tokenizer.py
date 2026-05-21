@@ -79,25 +79,27 @@ class Tokenizer:
     def from_checkpoint(cls, checkpoint_dir: Union[Path, str]):
         from huggingface_hub import hf_hub_download
 
+        # Preserve the raw string for HF Hub lookup — Path() on Windows
+        # converts "org/repo" to "org\repo" and HF rejects backslashes.
+        raw = str(checkpoint_dir)
         checkpoint_dir = Path(checkpoint_dir)
 
         if not checkpoint_dir.exists():
-            checkpoint_str = str(checkpoint_dir)
-            if checkpoint_str.startswith("/") or checkpoint_str.startswith("."):
-                raise NotADirectoryError(f"Tokenizer directory not found: {checkpoint_str}")
+            if raw.startswith("/") or raw.startswith("."):
+                raise NotADirectoryError(f"Tokenizer directory not found: {raw}")
             try:
                 tokenizer_file = hf_hub_download(
-                    repo_id=checkpoint_str, filename="tokenizer.json"
+                    repo_id=raw, filename="tokenizer.json"
                 )
                 for optional_file in ["special_tokens_map.json", "tokenizer_config.json"]:
                     try:
-                        hf_hub_download(repo_id=checkpoint_str, filename=optional_file)
+                        hf_hub_download(repo_id=raw, filename=optional_file)
                     except Exception:
                         pass
                 checkpoint_dir = Path(tokenizer_file).parent
             except (OSError, AssertionError):
                 raise NotADirectoryError(
-                    f"Tokenizer checkpoint {checkpoint_str} cannot be loaded."
+                    f"Tokenizer checkpoint {raw} cannot be loaded."
                 )
 
         return cls.from_directory(checkpoint_dir)

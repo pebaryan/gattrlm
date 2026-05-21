@@ -22,8 +22,10 @@ import json
 import torch
 import torch.nn as nn
 
-nvml_count = torch.cuda._device_count_amdsmi() if torch.version.hip else torch.cuda._device_count_nvml()
-if nvml_count < 1:
+_nvml_count = torch.cuda._device_count_amdsmi() if torch.version.hip else torch.cuda._device_count_nvml()
+# NVML can return -1 on Windows / fresh drivers even when CUDA is healthy; fall
+# back to the cudart-backed count before declaring node failure.
+if _nvml_count < 1 and torch.cuda.device_count() < 1:
     raise ValueError(f"Node failure! Device manager init failed on {socket.gethostname()}")
 
 
@@ -76,6 +78,14 @@ def compute_flops_per_token_at_recurrence(flop_breakdown: FLOPBreakdown, forward
 from dataclasses import asdict, is_dataclass
 from jsonargparse import CLI
 import re
+
+# The compiled optimizer steps in recpre/optim/muon_adamw.py see one tensor
+# shape per parameter; for a 140M model that's >30 distinct shapes, well over
+# dynamo's default cache size. Raise the limit so we don't FailOnRecompileLimit.
+import torch._dynamo
+torch._dynamo.config.cache_size_limit = max(getattr(torch._dynamo.config, "cache_size_limit", 8), 1024)
+if hasattr(torch._dynamo.config, "recompile_limit"):
+    torch._dynamo.config.recompile_limit = max(torch._dynamo.config.recompile_limit, 1024)
 
 RETRY_CACHE_INDUCTOR = False
 
@@ -1757,7 +1767,9 @@ def main():
     state = startup(fabric, cfg)
     fabric.print(f"{time.ctime()[:-5]}: startup() complete, calling train()...")
 
-    signal.signal(signal.SIGUSR1, lambda s, f: (fabric.print("SIGUSR1: saving checkpoint..."), state.__setitem__("should_exit_training", True), maybe_save_checkpoint(fabric, state, cfg, force_save=True)))
+    # SIGUSR1 is POSIX-only; skip the handler on Windows.
+    if hasattr(signal, "SIGUSR1"):
+        signal.signal(signal.SIGUSR1, lambda s, f: (fabric.print("SIGUSR1: saving checkpoint..."), state.__setitem__("should_exit_training", True), maybe_save_checkpoint(fabric, state, cfg, force_save=True)))
 
     train_time = time.time()
     try:

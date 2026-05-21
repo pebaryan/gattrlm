@@ -49,56 +49,84 @@ def make_copy_batch(batch_size: int, half_len: int, vocab: int, sep_id: int,
 
 # ---- Model ----
 
-def build_tiny_model(vocab: int, native: bool = False,
-                     device: str = "cpu") -> attractor.CliffordLM:
-    """Build a tiny CliffordLM (or NativeCliffordLM if native=True)."""
-    name = "native-clifford-small-140m" if native else "clifford-small-140m"
-    cfg = attractor.CliffordLMConfig.from_name(
-        name,
-        # Shrink for CPU speed
-        n_embd=128,
-        num_attention_heads=4,
-        num_key_value_heads=4,
-        intermediate_size=256,
+# Two preset sizes:
+#   "tiny" — runs on CPU in ~30s (default; the original demo).
+#   "big"  — meaningful test on a single GPU (~10-20M params).
+SIZE_PRESETS = {
+    "tiny": dict(n_embd=128, num_attention_heads=4, intermediate_size=256,
+                 n_backbone_layers=2, n_clifford_channels=16,
+                 n_clifford_attn_heads=4, n_clifford_attn_channels_per_head=4),
+    "big": dict(n_embd=384, num_attention_heads=6, intermediate_size=1536,
+                n_backbone_layers=4, n_clifford_channels=48,
+                n_clifford_attn_heads=6, n_clifford_attn_channels_per_head=8),
+}
+
+
+def build_model(vocab: int, arch: str = "clifford", size: str = "tiny",
+                device: str = "cpu") -> torch.nn.Module:
+    """Build a model. arch in {"attractor", "clifford", "native_clifford"}."""
+    preset = SIZE_PRESETS[size]
+    if arch == "attractor":
+        cfg_name = "attractor-small-140m"
+        cfg_cls = attractor.create_config
+    else:
+        cfg_name = ("native-clifford-small-140m" if arch == "native_clifford"
+                    else "clifford-small-140m")
+        cfg_cls = attractor.CliffordLMConfig.from_name
+
+    cfg = cfg_cls(
+        cfg_name,
+        n_embd=preset["n_embd"],
+        num_attention_heads=preset["num_attention_heads"],
+        num_key_value_heads=preset["num_attention_heads"],
+        intermediate_size=preset["intermediate_size"],
         block_size=64,
         vocab_size=vocab,
         padding_multiple=16,
-        n_backbone_layers=2,
+        n_backbone_layers=preset["n_backbone_layers"],
         n_fp_blocks=1,
-        # Clifford MLP: Cl(3,0), 16 channels * 8 blades = 128 hidden
-        clifford_p=3, clifford_q=0,
-        n_clifford_channels=16,
-        n_clifford_hidden=16,
-        # Clifford attention (only used when native=True)
-        n_clifford_attn_heads=4,
-        n_clifford_attn_channels_per_head=4,
-        # DEQ solver
         solver="anderson",
         max_iter=6,
         min_iter=2,
         tol=1e-2,
         backward_type="onestep",
-        # No fused head (no triton on CPU)
         use_fused_head="",
-        # Stability
         init_strategy="scaled-zero",
+        **({} if arch == "attractor" else dict(
+            clifford_p=3, clifford_q=0,
+            n_clifford_channels=preset["n_clifford_channels"],
+            n_clifford_hidden=preset["n_clifford_channels"],
+            n_clifford_attn_heads=preset["n_clifford_attn_heads"],
+            n_clifford_attn_channels_per_head=preset["n_clifford_attn_channels_per_head"],
+        )),
     )
-    model = cfg.construct_model().to(device)
-    return model
+    return cfg.construct_model().to(device)
+
+
+# Back-compat for the previous main() signature.
+def build_tiny_model(vocab: int, native: bool = False,
+                     device: str = "cpu") -> torch.nn.Module:
+    arch = "native_clifford" if native else "clifford"
+    return build_model(vocab, arch=arch, size="tiny", device=device)
 
 
 # ---- Training ----
 
 def train(steps: int = 300, batch: int = 32, half_len: int = 8,
           vocab: int = 17, device: str = "cpu", log_every: int = 20,
-          seed: int = 42, native: bool = False) -> list[float]:
+          seed: int = 42, arch: str = "clifford", size: str = "tiny",
+          ) -> dict:
+    """Train one architecture on the copy task. Returns a summary dict."""
     torch.manual_seed(seed)
     sep_id = vocab - 1
 
-    model = build_tiny_model(vocab, native=native, device=device)
+    model = build_model(vocab, arch=arch, size=size, device=device)
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"{type(model).__name__}: {n_params:,} params, vocab={vocab}, "
-          f"seq_len={2 * half_len + 1}, device={device}")
+    print(f"{type(model).__name__} ({arch}, {size}): {n_params:,} params, "
+          f"vocab={vocab}, seq_len={2 * half_len + 1}, device={device}")
+
+    if device.startswith("cuda"):
+        torch.cuda.reset_peak_memory_stats(device)
 
     opt = torch.optim.AdamW(model.parameters(), lr=3e-3, betas=(0.9, 0.95))
     losses: list[float] = []
@@ -121,14 +149,19 @@ def train(steps: int = 300, batch: int = 32, half_len: int = 8,
                   f"fp_iters={iters}  fp_rel={rel:.2e}")
 
     elapsed = time.time() - t0
-    print(f"\nDone in {elapsed:.1f}s ({steps / elapsed:.1f} steps/s)")
+    steps_per_sec = steps / elapsed
+    print(f"\nDone in {elapsed:.1f}s ({steps_per_sec:.1f} steps/s)")
+
+    peak_mem_gb = None
+    if device.startswith("cuda"):
+        peak_mem_gb = torch.cuda.max_memory_allocated(device) / 1e9
+        print(f"Peak VRAM: {peak_mem_gb:.2f} GB")
 
     # Demo: greedy copy a held-out prefix
     model.eval()
     with torch.no_grad():
         seq, _ = make_copy_batch(1, half_len, vocab, sep_id, device=device)
         prefix = seq[0, :half_len].tolist()
-        # Run forward and decode greedy from the SEP onward
         out = model(seq, return_logits=True)
         preds = out["logits"][0, half_len:2 * half_len].argmax(dim=-1).tolist()
         n_correct = sum(p == t for p, t in zip(preds, prefix))
@@ -136,7 +169,16 @@ def train(steps: int = 300, batch: int = 32, half_len: int = 8,
         print(f"                       predicted={preds}")
         print(f"  → {n_correct}/{half_len} tokens copied correctly")
 
-    return losses
+    return {
+        "arch": arch,
+        "losses": losses,
+        "params": n_params,
+        "elapsed": elapsed,
+        "steps_per_sec": steps_per_sec,
+        "peak_mem_gb": peak_mem_gb,
+        "copy_correct": n_correct,
+        "copy_total": half_len,
+    }
 
 
 # ---- Smoke assertion ----
@@ -144,38 +186,51 @@ def train(steps: int = 300, batch: int = 32, half_len: int = 8,
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--native", action="store_true",
-                        help="Use NativeCliffordLM (Clifford attention + Clifford MLP)")
-    parser.add_argument("--both", action="store_true",
-                        help="Train both hybrid and native; print a side-by-side summary.")
+    parser.add_argument("--arch", choices=["attractor", "clifford", "native_clifford"],
+                        default="clifford")
+    parser.add_argument("--all", action="store_true",
+                        help="Train all three architectures and print a side-by-side summary.")
+    parser.add_argument("--size", choices=list(SIZE_PRESETS), default="tiny")
+    parser.add_argument("--device", default="cpu", help="cpu or cuda or cuda:0 etc")
     parser.add_argument("--steps", type=int, default=300)
+    parser.add_argument("--batch", type=int, default=32)
+    parser.add_argument("--half-len", type=int, default=8)
     args = parser.parse_args()
 
-    runs = []
-    if args.both:
-        configs = [("hybrid (CliffordLM)", False), ("native (NativeCliffordLM)", True)]
-    else:
-        label = "native (NativeCliffordLM)" if args.native else "hybrid (CliffordLM)"
-        configs = [(label, args.native)]
+    archs = ["attractor", "clifford", "native_clifford"] if args.all else [args.arch]
 
-    for label, native in configs:
-        print(f"\n=== {label} ===")
-        losses = train(steps=args.steps, native=native)
+    summaries = []
+    for arch in archs:
+        print(f"\n=== {arch} ({args.size}, device={args.device}) ===")
+        summary = train(
+            steps=args.steps, batch=args.batch, half_len=args.half_len,
+            device=args.device, arch=arch, size=args.size,
+        )
+        losses = summary["losses"]
         early = sum(losses[:20]) / 20
         late = sum(losses[-20:]) / 20
         delta = early - late
         print(f"\nLoss decreased from {early:.3f} → {late:.3f}  (Δ={delta:.3f})")
         assert delta > 0.5, (
-            f"{label}: loss did not decrease enough (Δ={delta:.3f}); "
-            "model may be broken or stuck."
+            f"{arch}: loss did not decrease enough (Δ={delta:.3f}); broken?"
         )
-        runs.append((label, early, late, delta))
+        summary["early"] = early
+        summary["late"] = late
+        summaries.append(summary)
 
-    if len(runs) > 1:
+    if len(summaries) > 1:
         print("\n=== Summary ===")
-        for label, early, late, delta in runs:
-            print(f"  {label:<32s}  loss {early:6.3f} → {late:6.3f}  Δ={delta:.3f}")
-    print("\nPASS: model(s) learning the copy task.")
+        header = (f"{'arch':<18s} {'params':>10s} {'steps/s':>9s} "
+                  f"{'peak VRAM':>10s} {'loss start':>11s} {'loss end':>9s} "
+                  f"{'copy':>5s}")
+        print(header)
+        for s in summaries:
+            mem = f"{s['peak_mem_gb']:.2f} GB" if s['peak_mem_gb'] is not None else "    --   "
+            print(f"{s['arch']:<18s} {s['params']:>10,d} "
+                  f"{s['steps_per_sec']:>9.1f} "
+                  f"{mem:>10s} {s['early']:>11.3f} {s['late']:>9.3f} "
+                  f"{s['copy_correct']:>2d}/{s['copy_total']:<2d}")
+    print("\nPASS: all selected model(s) learning the copy task.")
 
 
 if __name__ == "__main__":

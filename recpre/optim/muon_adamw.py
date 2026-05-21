@@ -10,7 +10,7 @@ POLAR_COEFFS = [
     (2.3465413258596377, -1.7097828382687081, 0.42323551169305323),
 ]
 
-@torch.compile(dynamic=False, fullgraph=True)
+@torch.compile(dynamic=True, fullgraph=True)
 def adamw_step(p: Tensor, g: Tensor, m: Tensor, v: Tensor, step: Tensor, lr: Tensor, b1: Tensor, b2: Tensor, eps: Tensor, wd: Tensor):
     p.mul_(1 - lr * wd)
     m.lerp_(g, 1 - b1)
@@ -18,7 +18,7 @@ def adamw_step(p: Tensor, g: Tensor, m: Tensor, v: Tensor, step: Tensor, lr: Ten
     bc1, bc2 = 1 - b1 ** step, 1 - b2 ** step
     p.add_(m / bc1 / ((v / bc2).sqrt() + eps), alpha=-lr)
 
-@torch.compile(dynamic=False, fullgraph=True)
+@torch.compile(dynamic=True, fullgraph=True)
 def muon_step(g: Tensor, p: Tensor, m: Tensor, v: Tensor, mom: Tensor, lr: Tensor, wd: Tensor, b2: Tensor, ns: int, rd: int):
     mom_f = mom.to(g.dtype)
     m.lerp_(g, 1 - mom_f)

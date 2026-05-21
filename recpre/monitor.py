@@ -303,9 +303,21 @@ def _get_peak_flops(fabric_precision, device_name: str) -> int:
         flops = 53.8e12 * multiplier
     elif "RTX 3050 Ti Laptop" in device_name:
         flops = 21.2e12  # 5.299 / 9.098 * 36.4 # :)
-    else:  # for other GPU types, raise
-        raise ValueError(f"Could not retrieve flops for device {device_name}.")
-    return int(flops)  # ok up to 1e18
+    elif "RTX 5060 Ti" in device_name:
+        # Blackwell consumer card: ~24 TFLOPS dense fp16/bf16, ~48 TFLOPS sparse.
+        # MFU below is computed against dense, matching how the other entries
+        # report it. Slightly conservative; refine if you have measured peak.
+        flops = 24e12 * multiplier
+    else:  # unknown device — log and use a sentinel so MFU reads as 0 rather than crashing
+        import warnings
+        warnings.warn(
+            f"Could not retrieve peak flops for device {device_name}; MFU "
+            "metric will report 0. Add a peak-flops entry to _get_peak_flops "
+            "for accurate MFU.",
+            stacklevel=2,
+        )
+        flops = float("inf")
+    return int(flops) if flops != float("inf") else flops
 
 
 # Cache dictionary

@@ -56,42 +56,89 @@ def build_gp_table(p: int, q: int, r: int = 0) -> torch.Tensor:
 def _extract_sparse_gp(table: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Extract sparse (i, j, k, sign) triples from a dense GP table.
 
-    The GP table has shape [dim, dim, dim] but each basis blade product
-    produces exactly one blade (table[i,j,:] has one non-zero). So the
-    table has exactly dim*dim non-zero entries out of dim*dim*dim.
-
-    Returns:
-        i_idx, j_idx, k_idx, signs: [nnz] tensors.
+    Implemented via Python iteration to stay compatible with Lightning
+    Fabric's meta-tensor init context — torch.where on a bool mask raises
+    a data-dependent NotImplementedError there.
     """
-    nnz_mask = table.abs() > 0
-    indices = torch.where(nnz_mask)
-    i_idx, j_idx, k_idx = indices
-    signs = table[i_idx, j_idx, k_idx]
-    return i_idx, j_idx, k_idx, signs
+    table_cpu = table.detach().to("cpu")
+    dim = table_cpu.shape[0]
+    i_list: list[int] = []
+    j_list: list[int] = []
+    k_list: list[int] = []
+    sign_list: list[float] = []
+    for i in range(dim):
+        for j in range(dim):
+            for k in range(dim):
+                v = float(table_cpu[i, j, k].item())
+                if v != 0.0:
+                    i_list.append(i)
+                    j_list.append(j)
+                    k_list.append(k)
+                    sign_list.append(v)
+    return (
+        torch.tensor(i_list, dtype=torch.long),
+        torch.tensor(j_list, dtype=torch.long),
+        torch.tensor(k_list, dtype=torch.long),
+        torch.tensor(sign_list, dtype=torch.float32),
+    )
 
 
 def _filter_sparse_op(
     i_idx: torch.Tensor, j_idx: torch.Tensor, k_idx: torch.Tensor,
     signs: torch.Tensor, grade_index: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Keep outer-product triples: grade(k) == grade(i) + grade(j)."""
-    gi = grade_index[i_idx]
-    gj = grade_index[j_idx]
-    gk = grade_index[k_idx]
-    mask = gk == gi + gj
-    return i_idx[mask], j_idx[mask], k_idx[mask], signs[mask]
+    """Keep outer-product triples: grade(k) == grade(i) + grade(j).
+
+    Python iteration to avoid bool-mask indexing under Fabric init context.
+    """
+    gi_cpu = grade_index.detach().to("cpu")
+    i_cpu = i_idx.detach().to("cpu")
+    j_cpu = j_idx.detach().to("cpu")
+    k_cpu = k_idx.detach().to("cpu")
+    s_cpu = signs.detach().to("cpu")
+    keep = [
+        n for n in range(len(i_cpu))
+        if int(gi_cpu[k_cpu[n]]) == int(gi_cpu[i_cpu[n]]) + int(gi_cpu[j_cpu[n]])
+    ]
+    if not keep:
+        empty_long = torch.zeros(0, dtype=torch.long)
+        return empty_long, empty_long.clone(), empty_long.clone(), torch.zeros(0, dtype=s_cpu.dtype)
+    keep_t = torch.tensor(keep, dtype=torch.long, device="cpu")
+    return (
+        i_cpu[keep_t].clone(),
+        j_cpu[keep_t].clone(),
+        k_cpu[keep_t].clone(),
+        s_cpu[keep_t].clone(),
+    )
 
 
 def _filter_sparse_ip(
     i_idx: torch.Tensor, j_idx: torch.Tensor, k_idx: torch.Tensor,
     signs: torch.Tensor, grade_index: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Keep Hestenes inner-product triples: grade(k) == |grade(i) - grade(j)|."""
-    gi = grade_index[i_idx]
-    gj = grade_index[j_idx]
-    gk = grade_index[k_idx]
-    mask = gk == (gi - gj).abs()
-    return i_idx[mask], j_idx[mask], k_idx[mask], signs[mask]
+    """Keep Hestenes inner-product triples: grade(k) == |grade(i) - grade(j)|.
+
+    Python iteration to avoid bool-mask indexing under Fabric init context.
+    """
+    gi_cpu = grade_index.detach().to("cpu")
+    i_cpu = i_idx.detach().to("cpu")
+    j_cpu = j_idx.detach().to("cpu")
+    k_cpu = k_idx.detach().to("cpu")
+    s_cpu = signs.detach().to("cpu")
+    keep = [
+        n for n in range(len(i_cpu))
+        if int(gi_cpu[k_cpu[n]]) == abs(int(gi_cpu[i_cpu[n]]) - int(gi_cpu[j_cpu[n]]))
+    ]
+    if not keep:
+        empty_long = torch.zeros(0, dtype=torch.long)
+        return empty_long, empty_long.clone(), empty_long.clone(), torch.zeros(0, dtype=s_cpu.dtype)
+    keep_t = torch.tensor(keep, dtype=torch.long, device="cpu")
+    return (
+        i_cpu[keep_t].clone(),
+        j_cpu[keep_t].clone(),
+        k_cpu[keep_t].clone(),
+        s_cpu[keep_t].clone(),
+    )
 
 
 def _grade_index_map(n: int) -> torch.Tensor:
@@ -135,25 +182,33 @@ class CliffordAlgebra(nn.Module):
         self.n = p + q + r
         self.dim = 1 << self.n
 
-        gp_table = build_gp_table(p, q, r)
-        self.register_buffer("_gp_table", gp_table)
-        self.register_buffer("_grade_index", _grade_index_map(self.n))
-        self.register_buffer("_metric_signs", _blade_metric_signs_precomputed(p, q, r))
+        # Build the algebra tables on CPU, outside any Lightning Fabric /
+        # FSDP meta-tensor init context. Operations like torch.where on a
+        # bool mask raise data-dependent errors under those contexts; doing
+        # the setup on CPU keeps it deterministic and Fabric-safe. The
+        # buffers will be moved to the model's target device when the
+        # surrounding nn.Module is moved (.to(device) / Fabric.setup_module).
+        with torch.device("cpu"):
+            gp_table = build_gp_table(p, q, r)
+            grade_index = _grade_index_map(self.n)
+            metric_signs = _blade_metric_signs_precomputed(p, q, r)
+            i_idx, j_idx, k_idx, signs = _extract_sparse_gp(gp_table)
+            op_i, op_j, op_k, op_sign = _filter_sparse_op(
+                i_idx, j_idx, k_idx, signs, grade_index)
+            ip_i, ip_j, ip_k, ip_sign = _filter_sparse_ip(
+                i_idx, j_idx, k_idx, signs, grade_index)
 
-        # Sparse GP indices: O(dim^2) vs dense einsum O(dim^3).
-        i_idx, j_idx, k_idx, signs = _extract_sparse_gp(gp_table)
+        self.register_buffer("_gp_table", gp_table)
+        self.register_buffer("_grade_index", grade_index)
+        self.register_buffer("_metric_signs", metric_signs)
         self.register_buffer("_gp_i", i_idx)
         self.register_buffer("_gp_j", j_idx)
         self.register_buffer("_gp_k", k_idx)
         self.register_buffer("_gp_sign", signs)
-
-        grade_idx = self._grade_index
-        op_i, op_j, op_k, op_sign = _filter_sparse_op(i_idx, j_idx, k_idx, signs, grade_idx)
         self.register_buffer("_op_i", op_i)
         self.register_buffer("_op_j", op_j)
         self.register_buffer("_op_k", op_k)
         self.register_buffer("_op_sign", op_sign)
-        ip_i, ip_j, ip_k, ip_sign = _filter_sparse_ip(i_idx, j_idx, k_idx, signs, grade_idx)
         self.register_buffer("_ip_i", ip_i)
         self.register_buffer("_ip_j", ip_j)
         self.register_buffer("_ip_k", ip_k)
