@@ -241,7 +241,8 @@ class ParquetStreamPure(IterableDataset):
         # Save row_group_idx - 1 because load_state_dict will read the buffer and then increment
         saved_row_group_idx = self._state["row_group_idx"] - 1
         buffer_remaining = len(self._state["buffer"])
-        
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         local_state = torch.tensor(
             [
                 self._state["file_idx"],
@@ -252,12 +253,15 @@ class ParquetStreamPure(IterableDataset):
                 *rng_1,
                 rng_2 if rng_2 is not None else -1,
             ],
-            device="cuda",
+            device=device,
         )
 
-        # Single gather for all state
-        gathered_states = [torch.zeros_like(local_state) for _ in range(torch.distributed.get_world_size())]
-        torch.distributed.all_gather(gathered_states, local_state)
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            gathered_states = [torch.zeros_like(local_state) for _ in range(torch.distributed.get_world_size())]
+            torch.distributed.all_gather(gathered_states, local_state)
+        else:
+            # Single-rank training (e.g. fabric_strategy=single): no peers to gather from.
+            gathered_states = [local_state]
 
         result = {
             "file_idx": [s[0].item() for s in gathered_states],
@@ -266,11 +270,15 @@ class ParquetStreamPure(IterableDataset):
             "fingerprint": [hex(s[3].item())[2:] for s in gathered_states],  # type: ignore
             "rng_state": gathered_states,  # Full tensors for unpacking in load
         }
-        
+
         return result
 
     def load_state_dict(self, state_dict, offset_ranks=False):
-        rank = torch.distributed.get_rank()
+        rank = (
+            torch.distributed.get_rank()
+            if torch.distributed.is_available() and torch.distributed.is_initialized()
+            else 0
+        )
 
         def get_value(key):  # helper for backward compat
             effective_rank = rank % len(state_dict["fingerprint"])
