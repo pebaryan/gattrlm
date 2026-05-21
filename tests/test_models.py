@@ -1158,6 +1158,32 @@ class TestCliffordPrelude:
         for blk in model.transformer.core_block:
             assert isinstance(blk, AttnOnlyCliffordFPBlock)
 
+    def test_disable_rope_control(self):
+        """disable_rope_in_prelude isolates the RoPE-loss penalty: prelude
+        uses STANDARD attention but with a no-op freqs_cis, plus a learned
+        positional embedding."""
+        # Use the standard-CliffordLM helper but flip the flag.
+        cfg = _tiny_clifford_lm_config(
+            disable_rope_in_prelude=True,
+            # Keep everything else baseline (no Clifford anywhere).
+            clifford_attention=False,
+            clifford_mlp=False,
+            clifford_attention_prelude=False,
+        )
+        model = cfg.construct_model()
+        # Prelude blocks are still standard TransformerPreNormBlocks
+        from attractor.modules.blocks import TransformerPreNormBlock
+        for blk in model.transformer.prelude:
+            assert isinstance(blk, TransformerPreNormBlock)
+        # wpe was added
+        assert hasattr(model.transformer, "wpe")
+        # Forward + backward works
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        out["loss"].backward()
+        _check_finite_grads(model)
+
 
 # ========================================================================
 #  Cross-Model Tests

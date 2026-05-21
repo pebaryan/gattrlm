@@ -45,6 +45,13 @@ class CliffordLMConfig(AttractorConfig):
     # positional embedding to wte (since Clifford attention has no RoPE).
     clifford_attention_prelude: bool = False
 
+    # Control variant: keep STANDARD attention in the prelude but suppress
+    # RoPE by passing a no-op freqs_cis (all 1+0j). A learned positional
+    # embedding is added in its place. Isolates the RoPE-loss penalty from
+    # the Clifford-attention effect — pair with clifford_attention_prelude=False
+    # for the clean control of PreludeOnlyCliffordLM.
+    disable_rope_in_prelude: bool = False
+
     # Clifford attention sub-config (only consulted when any clifford_*
     # attention flag is True). Heads split the channel space; each head's
     # score is the Clifford scalar product summed over channels_per_head.

@@ -120,28 +120,47 @@ class CliffordLM(Attractor):
     def __init__(self, config, objective=None, gradient_checkpointing: bool = False) -> None:
         super().__init__(config, objective=objective,
                          gradient_checkpointing=gradient_checkpointing)
-        # If the prelude has Clifford attention, RoPE no longer encodes
-        # position — add a learned absolute positional embedding.
-        if getattr(config, "clifford_attention_prelude", False):
+        # When the prelude attention has no RoPE — either because we swapped
+        # it for Clifford attention (which has no rotary embedding) or because
+        # we explicitly disabled it as a control — add a learned absolute
+        # positional embedding to substitute.
+        if self._prelude_needs_wpe(config):
             self.transformer.wpe = nn.Embedding(config.block_size, config.n_embd)
             nn.init.normal_(self.transformer.wpe.weight, std=0.02)
+
+    @staticmethod
+    def _prelude_needs_wpe(config) -> bool:
+        return (
+            getattr(config, "clifford_attention_prelude", False)
+            or getattr(config, "disable_rope_in_prelude", False)
+        )
 
     def _encode(self, input_ids: Tensor, freqs_cis: Tensor,
                 attention_mask: Optional[Tensor]) -> Tensor:
         # Inject the learned positional embedding (if present) right after
-        # token embeddings. The rest of _encode is identical to Attractor's.
+        # token embeddings. If RoPE is suppressed for the prelude, pass a
+        # no-op freqs_cis (all 1+0j) to the prelude blocks; the FP block path
+        # (called from Attractor._refine) still receives the original
+        # freqs_cis since it's untouched.
         x = self.transformer.wte(input_ids)
         if self.emb_scale != 1:
             x = x * self.emb_scale
         if hasattr(self.transformer, "wpe"):
             pos = torch.arange(input_ids.shape[1], device=input_ids.device, dtype=torch.long)
             x = x + self.transformer.wpe(pos).unsqueeze(0)
+
+        prelude_freqs_cis = freqs_cis
+        if getattr(self.config, "disable_rope_in_prelude", False):
+            # No-op rotation: complex 1+0j everywhere. apply_rotary_emb_complex_like
+            # does element-wise complex multiplication, so this leaves Q/K untouched.
+            prelude_freqs_cis = torch.ones_like(freqs_cis)
+
         for i, block in enumerate(self.transformer.prelude):
             ve = self.value_embeds[str(i)](input_ids) if str(i) in self.value_embeds else None
             if self.gradient_checkpointing:
-                x = self.config.checkpoint(block, x, freqs_cis, attention_mask, ve=ve)
+                x = self.config.checkpoint(block, x, prelude_freqs_cis, attention_mask, ve=ve)
             else:
-                x = block(x, freqs_cis, attention_mask, ve=ve)
+                x = block(x, prelude_freqs_cis, attention_mask, ve=ve)
         return x
 
     def _make_prelude_block(self, config, layer_id: int) -> nn.Module:
