@@ -1158,6 +1158,78 @@ class TestCliffordPrelude:
         for blk in model.transformer.core_block:
             assert isinstance(blk, AttnOnlyCliffordFPBlock)
 
+    def test_multivector_rope_module(self):
+        """CliffordRotaryEmb preserves shape and is differentiable."""
+        from attractor.models.clifford_attractor import CliffordAlgebra
+        from attractor.models.clifford_lm import CliffordRotaryEmb
+        algebra = CliffordAlgebra(3, 0)
+        rope = CliffordRotaryEmb(algebra, channels_per_head=4, max_seq_len=16)
+        q = torch.randn(2, 3, 8, 4, algebra.dim, requires_grad=True)
+        q_rot = rope(q)
+        assert q_rot.shape == q.shape
+        # Gradient flows through the rotor sandwich
+        q_rot.sum().backward()
+        assert q.grad is not None
+        assert torch.isfinite(q.grad).all()
+
+    def test_multivector_rope_relative_position(self):
+        """The Clifford scalar product <R_m q R~_m, R_n k R~_n> should equal
+        <R_{m-n} q R~_{m-n}, k> within each channel — relative-position
+        property for the rotor-sandwich RoPE.
+
+        For a single channel using a single bivector axis the result is exact;
+        we test channel 0 (which uses the first bivector axis) only.
+        """
+        from attractor.models.clifford_attractor import CliffordAlgebra
+        from attractor.models.clifford_lm import CliffordRotaryEmb
+        algebra = CliffordAlgebra(3, 0)
+        rope = CliffordRotaryEmb(algebra, channels_per_head=4, max_seq_len=32, base=100.0)
+
+        # Single (Q, K) at positions m, n; one head, one batch element.
+        torch.manual_seed(0)
+        q = torch.randn(1, 1, 1, 4, algebra.dim)
+        k = torch.randn(1, 1, 1, 4, algebra.dim)
+        m, n = 5, 3  # positions
+
+        # Apply per-position rotors via the module's precomputed table.
+        R_m = rope._R[m]                       # [C, D]
+        R_m_rev = rope._R_rev[m]
+        R_n = rope._R[n]
+        R_n_rev = rope._R_rev[n]
+
+        # q'_m = R_m · q · R~_m, k'_n analogously. Use channel 0 only.
+        q0, k0 = q[0, 0, 0, 0], k[0, 0, 0, 0]
+        Rm0, Rm0_rev = R_m[0], R_m_rev[0]
+        Rn0, Rn0_rev = R_n[0], R_n_rev[0]
+
+        gp = algebra.geometric_product
+        q_rot = gp(gp(Rm0, q0), Rm0_rev)
+        k_rot = gp(gp(Rn0, k0), Rn0_rev)
+        score = gp(q_rot, algebra.reverse(k_rot))[0].item()  # grade-0
+
+        # Compare against: rotate q by R_{m-n}, leave k alone.
+        # R_{m-n} for channel 0 = exp(-(m-n)·α_0·B_0 / 2) which we can grab
+        # by composing R_m · R_n^{-1} = R_m · R_n_rev (since rotors are unit).
+        R_diff = gp(Rm0, Rn0_rev)
+        R_diff_rev = algebra.reverse(R_diff)
+        q_diff = gp(gp(R_diff, q0), R_diff_rev)
+        expected = gp(q_diff, algebra.reverse(k0))[0].item()
+
+        assert abs(score - expected) < 1e-4, (
+            f"Relative-position property broken: got {score:.6f}, "
+            f"expected {expected:.6f}"
+        )
+
+    def test_multivector_rope_no_wpe(self):
+        """When multivector_rope=True with clifford_attention_prelude=True,
+        no learned positional embedding is added (RoPE supplies position)."""
+        cfg = _tiny_clifford_prelude_config(multivector_rope=True)
+        model = cfg.construct_model()
+        assert not hasattr(model.transformer, "wpe")
+        # CliffordSelfAttention inside the prelude block has a rope module
+        for blk in model.transformer.prelude:
+            assert blk.attn.rope is not None
+
     def test_disable_rope_control(self):
         """disable_rope_in_prelude isolates the RoPE-loss penalty: prelude
         uses STANDARD attention but with a no-op freqs_cis, plus a learned

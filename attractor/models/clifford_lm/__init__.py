@@ -3,6 +3,7 @@
 from .config import CliffordLMConfig
 from .clifford_lm import CliffordFPBlock, CliffordLM, CliffordSublayer, create_clifford_lm
 from .native import (
+    CliffordRotaryEmb,
     CliffordSelfAttention,
     NativeCliffordFPBlock,
     NativeCliffordLM,
@@ -16,6 +17,7 @@ __all__ = [
     "CliffordFPBlock",
     "CliffordLM",
     "CliffordSublayer",
+    "CliffordRotaryEmb",
     "CliffordSelfAttention",
     "NativeCliffordFPBlock",
     "NativeCliffordLM",

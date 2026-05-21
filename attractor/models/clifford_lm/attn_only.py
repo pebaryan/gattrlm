@@ -41,6 +41,9 @@ class AttnOnlyCliffordFPBlock(FixedPointBlock):
             n_embd=config.n_embd,
             n_heads=config.n_clifford_attn_heads,
             channels_per_head=config.n_clifford_attn_channels_per_head,
+            use_rope=bool(getattr(config, "multivector_rope", False)),
+            max_seq_len=int(getattr(config, "block_size", 2048)),
+            rope_base=float(getattr(config, "multivector_rope_base", 10000.0)),
         )
 
     def forward(self, x: Tensor, freqs_cis: Tensor,

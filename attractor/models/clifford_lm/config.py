@@ -52,6 +52,14 @@ class CliffordLMConfig(AttractorConfig):
     # for the clean control of PreludeOnlyCliffordLM.
     disable_rope_in_prelude: bool = False
 
+    # Multivector RoPE: when True, every CliffordSelfAttention applies a
+    # rotor sandwich on Q/K with position-dependent rotors (one bivector
+    # axis per channel, frequency α_c = base^(-c/(C-1))). Gives Clifford
+    # attention a native rotary positional encoding so the prelude no
+    # longer needs the wpe substitute. See CliffordRotaryEmb.
+    multivector_rope: bool = False
+    multivector_rope_base: float = 10000.0
+
     # Clifford attention sub-config (only consulted when any clifford_*
     # attention flag is True). Heads split the channel space; each head's
     # score is the Clifford scalar product summed over channels_per_head.

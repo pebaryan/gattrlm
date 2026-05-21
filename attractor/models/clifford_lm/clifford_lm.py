@@ -130,8 +130,14 @@ class CliffordLM(Attractor):
 
     @staticmethod
     def _prelude_needs_wpe(config) -> bool:
+        # Add a learned absolute positional embedding when the prelude has
+        # no rotational positional encoding. The Clifford-attention prelude
+        # doesn't need one if multivector RoPE is enabled (CliffordRotaryEmb
+        # supplies position information inside the attention).
+        clif_pre = getattr(config, "clifford_attention_prelude", False)
+        mv_rope = getattr(config, "multivector_rope", False)
         return (
-            getattr(config, "clifford_attention_prelude", False)
+            (clif_pre and not mv_rope)
             or getattr(config, "disable_rope_in_prelude", False)
         )
 
