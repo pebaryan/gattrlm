@@ -49,6 +49,7 @@ from attractor.models.clifford_attractor import (
     CliffordAttractorBlock,
     _solve_fixed_point,
 )
+from attractor.models.clifford_lm.native import CliffordSelfAttention
 
 
 # Indices of e1, e2, e3 in Cl(3,0)
@@ -221,6 +222,63 @@ class CliffordRegressor(nn.Module):
         return self.output_proj(h_star)             # [B, D]
 
 
+class NativeCliffordRegressor(nn.Module):
+    """Multi-layer transformer-style regressor using CliffordSelfAttention.
+
+    The 16-d input (concat of v_mv and R, each 8-blade Cl(3,0) multivectors)
+    is reshaped to a 2-token sequence of 8-d features (so the two
+    multivectors are two positions). A stack of pre-norm blocks applies
+    Clifford self-attention (multivector Q/K/V, grade-0 attention scores)
+    between the two tokens, plus a feed-forward MLP. The first token's
+    final hidden state is projected to the 8-d output multivector.
+    """
+
+    def __init__(
+        self,
+        algebra: CliffordAlgebra,
+        n_embd: int = 8,
+        n_heads: int = 4,
+        channels_per_head: int = 4,
+        n_layers: int = 4,
+        ff_mult: int = 2,
+    ):
+        super().__init__()
+        self.n_embd = n_embd
+        D = algebra.dim
+        self.D = D
+        assert n_embd == D, ("This regressor treats each multivector as one "
+                             "scalar token of width algebra.dim, so n_embd "
+                             "must equal algebra.dim.")
+
+        self.layers = nn.ModuleList()
+        for _ in range(n_layers):
+            block = nn.ModuleDict(dict(
+                norm1=nn.LayerNorm(n_embd),
+                attn=CliffordSelfAttention(algebra, n_embd, n_heads, channels_per_head),
+                norm2=nn.LayerNorm(n_embd),
+                ff=nn.Sequential(
+                    nn.Linear(n_embd, n_embd * ff_mult),
+                    nn.GELU(),
+                    nn.Linear(n_embd * ff_mult, n_embd),
+                ),
+            ))
+            self.layers.append(block)
+
+        self.out_norm = nn.LayerNorm(n_embd)
+        self.out_proj = nn.Linear(n_embd, D)
+
+    def forward(self, x_features: torch.Tensor) -> torch.Tensor:
+        # x_features: [B, 16] = concat(v_mv [8], R [8])
+        B = x_features.shape[0]
+        x = x_features.view(B, 2, self.n_embd)  # [B, 2, 8]
+        for blk in self.layers:
+            x = x + blk["attn"](blk["norm1"](x))
+            x = x + blk["ff"](blk["norm2"](x))
+        # Read the first token (the "v" slot)
+        h = self.out_norm(x[:, 0])              # [B, 8]
+        return self.out_proj(h)                  # [B, 8]
+
+
 def count_params(m: nn.Module) -> int:
     return sum(p.numel() for p in m.parameters())
 
@@ -291,41 +349,53 @@ def evaluate(model: nn.Module, x: torch.Tensor, y: torch.Tensor, batch: int = 51
 # ============================================================================
 
 def run_probe(name: str, x_train, y_train, eval_sets: dict[str, tuple],
-              build_mlp, build_clif, *, epochs: int, batch: int, device: str):
+              builders: dict[str, callable], *,
+              epochs: int, batch: int, device: str):
     print("\n" + "#" * 70)
     print(f"# Probe: {name}")
     print("#" * 70)
 
-    mlp = build_mlp()
-    clif = build_clif()
-    print(f"  MLP                  : {count_params(mlp):>7,} params")
-    print(f"  CliffordRegressor    : {count_params(clif):>7,} params")
+    models = {}
+    for model_name, build in builders.items():
+        m = build()
+        models[model_name] = m
+        print(f"  {model_name:<22} : {count_params(m):>7,} params")
 
-    print(f"  Training MLP for {epochs} epochs ...")
-    t0 = time.time()
-    train(mlp, "mlp", x_train, y_train,
-          epochs=epochs, batch_size=batch, lr=1e-3, device=device, verbose=False)
-    t_mlp = time.time() - t0
-
-    print(f"  Training Clifford for {epochs} epochs ...")
-    t0 = time.time()
-    train(clif, "clif", x_train, y_train,
-          epochs=epochs, batch_size=batch, lr=1e-3, device=device, verbose=False)
-    t_clif = time.time() - t0
+    timings = {}
+    for model_name, model in models.items():
+        print(f"  Training {model_name} for {epochs} epochs ...")
+        t0 = time.time()
+        train(model, model_name, x_train, y_train,
+              epochs=epochs, batch_size=batch, lr=1e-3, device=device, verbose=False)
+        timings[model_name] = time.time() - t0
 
     rows = {}
-    for model_name, model in [("mlp", mlp), ("clifford", clif)]:
+    for model_name, model in models.items():
         rows[model_name] = {k: evaluate(model, xs, ys) for k, (xs, ys) in eval_sets.items()}
 
-    print(f"\n  {'split':<20}{'MLP MSE':>14}{'Clifford MSE':>16}{'ratio':>10}")
-    print(f"  {'-' * 60}")
+    # Print a wide table.
+    name_w = max(len(n) for n in builders) + 2
+    print()
+    header = f"  {'split':<22}" + "".join(f"{n:>{name_w + 4}}" for n in builders)
+    print(header)
+    print("  " + "-" * (22 + (name_w + 4) * len(builders)))
     for split in eval_sets:
-        m = rows["mlp"][split]
-        c = rows["clifford"][split]
-        ratio = m / max(c, 1e-12)
-        print(f"  {split:<20}{m:>14.6f}{c:>16.6f}{ratio:>10.2f}x")
+        line = f"  {split:<22}"
+        for model_name in builders:
+            line += f"{rows[model_name][split]:>{name_w + 4}.6f}"
+        print(line)
 
-    print(f"\n  Wall-clock: MLP {t_mlp:.1f}s, Clifford {t_clif:.1f}s")
+    # Headline gap (extrapol / in-dist) per model.
+    in_key = next(iter(eval_sets))
+    out_key = list(eval_sets)[-1]
+    print(f"\n  Extrapolation gap ({out_key} / {in_key}):")
+    for model_name in builders:
+        gap = rows[model_name][out_key] / max(rows[model_name][in_key], 1e-12)
+        print(f"    {model_name:<22} {gap:>7.2f}x")
+
+    print(f"\n  Wall-clock: " + ", ".join(
+        f"{n} {timings[n]:.1f}s" for n in builders
+    ))
     return rows
 
 
@@ -348,7 +418,9 @@ def main():
 
     algebra = CliffordAlgebra(3, 0).to(device)
 
-    # Matched ~21k-param model builders (eyeballed from architecture math).
+    # Builders. We target ~10-21k params per arm — the absolute counts vary
+    # but the geometric architectures are deliberately given fewer params,
+    # which makes the equivariance result a lower bound on their advantage.
     def build_mlp():
         return MLPBaseline(in_dim=16, out_dim=8, hidden=96, depth=3)
 
@@ -358,6 +430,22 @@ def main():
             channels=24, hidden_channels=48, num_blocks=2,
             max_iter=8, tol=1e-3, anderson_m=3,
         )
+
+    def build_native():
+        return NativeCliffordRegressor(
+            algebra,
+            n_embd=algebra.dim,
+            n_heads=4,
+            channels_per_head=4,
+            n_layers=4,
+            ff_mult=2,
+        )
+
+    builders = {
+        "MLP": build_mlp,
+        "Clifford": build_clif,
+        "NativeClifford": build_native,
+    }
 
     # --- Probe 1: angle extrapolation ---------------------------------------
     print("\n[Probe 1] Angle extrapolation:")
@@ -376,7 +464,7 @@ def main():
     eval_sets_angle["extrapol (pi/2..pi)"] = (xs.to(device), ys.to(device))
     rows_angle = run_probe("Angle extrapolation",
                            x_train, y_train, eval_sets_angle,
-                           build_mlp, build_clif,
+                           builders,
                            epochs=args.epochs, batch=args.batch, device=device)
 
     # --- Probe 2: axis extrapolation ---------------------------------------
@@ -396,23 +484,33 @@ def main():
     eval_sets_axis["extrapol (sphere)"] = (xs.to(device), ys.to(device))
     rows_axis = run_probe("Axis extrapolation",
                           x_train, y_train, eval_sets_axis,
-                          build_mlp, build_clif,
+                          builders,
                           epochs=args.epochs, batch=args.batch, device=device)
 
     # --- Headline summary ---------------------------------------------------
     print("\n" + "=" * 70)
-    print("SUMMARY")
+    print("SUMMARY — extrapolation gap (extrapol MSE / in-dist MSE; lower is better)")
     print("=" * 70)
+
     def gap(rows, in_key, out_key):
-        return {
-            "mlp": rows["mlp"][out_key] / max(rows["mlp"][in_key], 1e-12),
-            "clifford": rows["clifford"][out_key] / max(rows["clifford"][in_key], 1e-12),
-        }
+        return {name: rows[name][out_key] / max(rows[name][in_key], 1e-12)
+                for name in builders}
+
     g_angle = gap(rows_angle, "in-dist (0..pi/2)", "extrapol (pi/2..pi)")
     g_axis = gap(rows_axis, "in-dist (30° cone)", "extrapol (sphere)")
-    print(f"Extrapolation gap (extrapol MSE / in-dist MSE; lower = better generalization):")
-    print(f"  Probe 1 (angle):  MLP {g_angle['mlp']:>6.2f}x   Clifford {g_angle['clifford']:>6.2f}x")
-    print(f"  Probe 2 (axis):   MLP {g_axis['mlp']:>6.2f}x   Clifford {g_axis['clifford']:>6.2f}x")
+
+    name_w = max(len(n) for n in builders) + 2
+
+    def fmt_row(label, gaps):
+        out = f"  {label:<22}"
+        for n in builders:
+            out += f"{gaps[n]:>{name_w + 3}.2f}x"
+        return out
+
+    print(f"  {'probe':<22}" + "".join(f"{n:>{name_w + 4}}" for n in builders))
+    print("  " + "-" * (22 + (name_w + 4) * len(builders)))
+    print(fmt_row("angle", g_angle))
+    print(fmt_row("axis", g_axis))
 
 
 if __name__ == "__main__":
