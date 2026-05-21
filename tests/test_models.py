@@ -1091,6 +1091,75 @@ class TestAttnOnlyCliffordLM:
 
 
 # ========================================================================
+#  CliffordLM with Clifford-attention prelude
+# ========================================================================
+
+
+def _tiny_clifford_prelude_config(**overrides):
+    """CliffordLM with Clifford attention in the prelude (and optionally the FP)."""
+    defaults = dict(
+        clifford_attention_prelude=True,
+        # Default: keep FP block standard, isolate prelude effect
+        clifford_attention=False,
+        clifford_mlp=False,
+        n_clifford_attn_heads=2,
+        n_clifford_attn_channels_per_head=2,
+    )
+    defaults.update(overrides)
+    return _tiny_clifford_lm_config(**defaults)
+
+
+class TestCliffordPrelude:
+    """Verify the Clifford-attention prelude variant."""
+
+    def test_prelude_block_type(self):
+        from attractor.models.clifford_lm import CliffordAttnPreludeBlock
+        cfg = _tiny_clifford_prelude_config()
+        model = cfg.construct_model()
+        for blk in model.transformer.prelude:
+            assert isinstance(blk, CliffordAttnPreludeBlock)
+
+    def test_wpe_added(self):
+        """When clifford_attention_prelude=True, a learned positional
+        embedding is added to substitute for the missing RoPE."""
+        cfg = _tiny_clifford_prelude_config()
+        model = cfg.construct_model()
+        assert hasattr(model.transformer, "wpe")
+        assert model.transformer.wpe.num_embeddings == cfg.block_size
+
+    def test_no_wpe_by_default(self):
+        """Standard CliffordLM (no prelude flag) keeps the original wte-only
+        embedding path; no learned wpe is added."""
+        cfg = _tiny_clifford_lm_config()
+        model = cfg.construct_model()
+        assert not hasattr(model.transformer, "wpe")
+
+    def test_forward_backward(self):
+        cfg = _tiny_clifford_prelude_config()
+        model = cfg.construct_model()
+        x = torch.randint(0, cfg.vocab_size, (2, 8))
+        labels = torch.randint(0, cfg.vocab_size, (2, 8))
+        out = model(x, labels=labels)
+        out["loss"].backward()
+        _check_finite_grads(model)
+
+    def test_combined_with_fp_clifford(self):
+        """Prelude Clifford + FP Clifford: both stacks should be Clifford."""
+        from attractor.models.clifford_lm import (
+            CliffordAttnPreludeBlock, AttnOnlyCliffordFPBlock,
+        )
+        cfg = _tiny_clifford_prelude_config(
+            clifford_attention=True,  # also Clifford in FP
+            clifford_mlp=False,
+        )
+        model = cfg.construct_model()
+        for blk in model.transformer.prelude:
+            assert isinstance(blk, CliffordAttnPreludeBlock)
+        for blk in model.transformer.core_block:
+            assert isinstance(blk, AttnOnlyCliffordFPBlock)
+
+
+# ========================================================================
 #  Cross-Model Tests
 # ========================================================================
 

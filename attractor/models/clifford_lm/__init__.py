@@ -9,6 +9,7 @@ from .native import (
     create_native_clifford_lm,
 )
 from .attn_only import AttnOnlyCliffordFPBlock
+from .prelude import CliffordAttnPreludeBlock
 
 __all__ = [
     "CliffordLMConfig",
@@ -19,6 +20,7 @@ __all__ = [
     "NativeCliffordFPBlock",
     "NativeCliffordLM",
     "AttnOnlyCliffordFPBlock",
+    "CliffordAttnPreludeBlock",
     "create_clifford_lm",
     "create_native_clifford_lm",
 ]

@@ -103,13 +103,52 @@ class CliffordFPBlock(FixedPointBlock):
 
 
 class CliffordLM(Attractor):
-    """Attractor LM with a flag-selected Clifford FP head.
+    """Attractor LM with flag-selected Clifford sublayers in the FP head and
+    optionally in the prelude.
 
-    The two sublayers of the FP block can independently be standard or
-    Clifford-aware (see CliffordLMConfig.clifford_attention /
-    .clifford_mlp). All other Attractor machinery — IFT, Anderson solver,
-    optimizer param tagging, monitoring, loss heads — is inherited.
+    Flags on CliffordLMConfig:
+      clifford_attention        — Clifford self-attention in the FP block
+      clifford_mlp              — Clifford MLP sublayer in the FP block
+      clifford_attention_prelude — Clifford self-attention in the prelude
+
+    When the prelude is Clifford, CliffordSelfAttention has no RoPE, so we
+    add a learned positional embedding `wpe` to wte's output to compensate.
+    All other Attractor machinery — IFT, Anderson solver, optimizer param
+    tagging, monitoring, loss heads — is inherited unchanged.
     """
+
+    def __init__(self, config, objective=None, gradient_checkpointing: bool = False) -> None:
+        super().__init__(config, objective=objective,
+                         gradient_checkpointing=gradient_checkpointing)
+        # If the prelude has Clifford attention, RoPE no longer encodes
+        # position — add a learned absolute positional embedding.
+        if getattr(config, "clifford_attention_prelude", False):
+            self.transformer.wpe = nn.Embedding(config.block_size, config.n_embd)
+            nn.init.normal_(self.transformer.wpe.weight, std=0.02)
+
+    def _encode(self, input_ids: Tensor, freqs_cis: Tensor,
+                attention_mask: Optional[Tensor]) -> Tensor:
+        # Inject the learned positional embedding (if present) right after
+        # token embeddings. The rest of _encode is identical to Attractor's.
+        x = self.transformer.wte(input_ids)
+        if self.emb_scale != 1:
+            x = x * self.emb_scale
+        if hasattr(self.transformer, "wpe"):
+            pos = torch.arange(input_ids.shape[1], device=input_ids.device, dtype=torch.long)
+            x = x + self.transformer.wpe(pos).unsqueeze(0)
+        for i, block in enumerate(self.transformer.prelude):
+            ve = self.value_embeds[str(i)](input_ids) if str(i) in self.value_embeds else None
+            if self.gradient_checkpointing:
+                x = self.config.checkpoint(block, x, freqs_cis, attention_mask, ve=ve)
+            else:
+                x = block(x, freqs_cis, attention_mask, ve=ve)
+        return x
+
+    def _make_prelude_block(self, config, layer_id: int) -> nn.Module:
+        if getattr(config, "clifford_attention_prelude", False):
+            from attractor.models.clifford_lm.prelude import CliffordAttnPreludeBlock
+            return CliffordAttnPreludeBlock(config, layer_id=layer_id)
+        return super()._make_prelude_block(config, layer_id)
 
     def _make_fp_block(self, config, layer_id: int) -> nn.Module:
         ca = bool(getattr(config, "clifford_attention", False))

@@ -106,7 +106,7 @@ class Attractor(nn.Module):
         self.emb_scale = config.init.embedding_scale
 
         prelude = nn.ModuleList(
-            config.Block(config, layer_id=i)
+            self._make_prelude_block(config, layer_id=i)
             for i in range(config.n_layers_in_prelude)
         )
         core_block = nn.ModuleList(
@@ -187,6 +187,15 @@ class Attractor(nn.Module):
             layer_scale_init=config.layer_scale_init,
             gamma_max=config.gamma_max,
         )
+
+    def _make_prelude_block(self, config, layer_id: int) -> nn.Module:
+        """Construct one block of the prelude (encoder) stack.
+
+        Subclasses override this to swap in a non-standard prelude block —
+        e.g. CliffordLM uses this to substitute a Clifford-attention block
+        when clifford_attention_prelude=True. Default returns the standard
+        block class set on the config."""
+        return config.Block(config, layer_id=layer_id)
 
     def _precompute_freqs_cis(self) -> Tensor:
         blocks = self.transformer.prelude

@@ -39,9 +39,15 @@ class CliffordLMConfig(AttractorConfig):
     clifford_attention: bool = False
     clifford_mlp: bool = True
 
-    # Clifford attention sub-config (only consulted when clifford_attention=True).
-    # Heads split the channel space; each head's score is the Clifford scalar
-    # product summed over channels_per_head.
+    # Apply Clifford attention to the *prelude* (encoder) blocks too.
+    # When True, CliffordLM substitutes CliffordAttnPreludeBlock for the
+    # default TransformerPreNormBlock in the prelude AND adds a learned
+    # positional embedding to wte (since Clifford attention has no RoPE).
+    clifford_attention_prelude: bool = False
+
+    # Clifford attention sub-config (only consulted when any clifford_*
+    # attention flag is True). Heads split the channel space; each head's
+    # score is the Clifford scalar product summed over channels_per_head.
     n_clifford_attn_heads: int = 4
     n_clifford_attn_channels_per_head: int = 4
 
