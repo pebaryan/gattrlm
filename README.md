@@ -492,6 +492,50 @@ All in [`attractor/models/clifford_cga.py`](attractor/models/clifford_cga.py):
 
 ---
 
+## Configuration: Three-Layer Architecture
+
+The project uses three independent config layers, each with its own directory and format:
+
+| Layer | Directory | Format | Purpose |
+|-------|-----------|--------|---------|
+| **1 — Model** | `attractor/configs/` | Python | Architecture params (`n_embd`, `n_layers`, heads, vocab size) |
+| **2 — Training** | `launch_configs/` | YAML | Trainer settings (LR, batch size, data paths, optimizer) |
+| **3 — Evaluation** | `eval_configs/` | YAML | Task definitions (benchmarks, precision, solver overrides) |
+
+### Layer 1: Model Architecture (`attractor/configs/`)
+
+Python files defining architecture parameters. Loaded automatically by `attractor.registry` at import time. Each file exports a `config` dict with a unique `name`.
+
+```python
+from attractor.models.config import Config
+cfg = Config.from_name("gpt-small-140m")  # loads from attractor/configs/gpt/gpt-small-140m.py
+model = cfg.construct_model()
+```
+
+### Layer 2: Training Run (`launch_configs/`)
+
+YAML files defining training recipes. Passed to `scripts/train.py` via `jsonargparse.CLI`. Each YAML references a `model_name` that maps to Layer 1, and can override specific architecture params via `model_overwrite`.
+
+```bash
+python scripts/train.py launch_configs/gpt-small-140m.yaml
+```
+
+### Layer 3: Evaluation Task (`eval_configs/`)
+
+YAML files defining evaluation workloads. Passed to `scripts/eval.py`. Can include `eval_solver` overrides for Attractor/EQLM DEQ solvers (more iterations, tighter tolerance at eval time).
+
+```bash
+python scripts/eval.py eval_configs/eval-core.yaml --out_dir /path/to/checkpoint
+```
+
+### Key design notes
+
+- **Layers are independent** — you can mix any model config with any training YAML (as long as `model_name` matches)
+- **Model configs are portable** — architecture definitions live in the package, while training/eval YAMLs contain environment-specific paths
+- **No duplication** — model architecture params live only in Layer 1; the YAML layers reference them by name
+
+---
+
 ## Training
 
 ### Language Modeling
@@ -546,14 +590,22 @@ gattrlm/
 │   ├── models/
 │   │   ├── clifford_attractor.py    # Core: CliffordAlgebra, layers, config, DEQ solver
 │   │   └── clifford_cga.py          # Cl(4,1) CGA: point/sphere/plane, rotors, meet
+│   ├── configs/                     # Model architecture definitions (Python)
+│   │   ├── gpt/                     # GPT baseline configs (small → xlarge)
+│   │   ├── attractor/               # Attractor configs (small → xlarge)
+│   │   ├── eqlm/                    # EQLM configs
+│   │   └── parcae/                  # Parcae configs
 │   └── __init__.py                  # Lazy exports for all public APIs
+├── launch_configs/                 # Training run configs (YAML) — hyperparameters, data paths
+├── eval_configs/                   # Evaluation task configs (YAML) — benchmarks, solver overrides
 ├── experiments/
 │   ├── clifford_toy_example.py      # Minimal working example
 ├── tests/
 │   ├── test_clifford_attractor.py   # 65 tests: algebra, layers, DEQ, backward
-│   └── test_clifford_cga.py         # 47 tests: null basis, embedding, rotors, meet, gradients
-├── recpre/                          # Training infrastructure
-├── receval/                         # Evaluation infrastructure
+│   ├── test_clifford_cga.py         # 47 tests: null basis, embedding, rotors, meet, gradients
+│   └── test_models.py               # 65 tests: GPT, Parcae, EQLM, Attractor
+├── recpre/                          # Training infrastructure, optimizers & schedulers
+├── receval/                         # Evaluation infrastructure, tasks & metrics
 ├── scripts/                         # Training, eval, generation entry points
 ├── README.md                        # This file
 └── README_CLIFFORD.md               # Original Clifford documentation

@@ -13,7 +13,6 @@ DEFAULT_HF_ORG = "SandyResearch"
 # Paths to search for config files
 _MODEL_CONFIG_PATHS = [
     Path(__file__).parent / "configs",
-    Path(__file__).parent.parent / "parcae_lm" / "configs",  # backward compat: parcae_lm configs
 ]
 
 configs = []

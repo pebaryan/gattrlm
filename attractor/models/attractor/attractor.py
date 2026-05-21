@@ -7,118 +7,16 @@ import torch.nn as nn
 from torch import Tensor
 
 from attractor.models.attractor.config import AttractorConfig
-from attractor.models.attractor.solvers import anderson_solve, get_solver
+from attractor.models.attractor.solvers import get_solver
+from attractor.models._ift import IFTAttach, IFTContext
 from attractor.modules.blocks import TransformerPreNormBlock
 from attractor.modules.utils import precompute_freqs_cis
 from attractor.ops import LinearCrossEntropyLoss
 
 
-def _maybe_clip_jv(Jv: Tensor, v: Tensor, adjoint_clip) -> Tensor:
-    """Rescale J^T v when its per-sample norm exceeds adjoint_clip * ||v||.
-    Keeps the Neumann-1 adjoint approximation safe if the head drifts towards
-    a less contractive regime during training."""
-    if adjoint_clip is None:
-        return Jv
-    B = Jv.size(0)
-    v_norm = v.reshape(B, -1).norm(dim=1).clamp_min(1e-12)
-    Jv_norm = Jv.reshape(B, -1).norm(dim=1)
-    bound = float(adjoint_clip) * v_norm
-    scale = torch.where(Jv_norm > bound,
-                        bound / Jv_norm.clamp_min(1e-12),
-                        torch.ones_like(Jv_norm))
-    return Jv * scale.view(B, *([1] * (Jv.ndim - 1)))
-
-
-class _IFTContext:
-    """Side-channel used by _IFTAttach to hold tensors that carry an autograd
-    graph but should not be passed as Function inputs (doing so would cause
-    double-backward errors when the outer engine re-traverses them)."""
-
-    def __init__(self, y_out, y_s, bw_kwargs):
-        self.y_out = y_out
-        self.y_s = y_s
-        self.bw_kwargs = bw_kwargs
-
-
-class _IFTAttach(torch.autograd.Function):
-    """Attaches the implicit-function-theorem (IFT) gradient to a fixed point.
-
-    Forward is a no-op (returns y_star_value unchanged). Backward solves the
-    adjoint system (I - J_f^T) u = v, then propagates u through f's graph to
-    compute gradients for the backbone context c and every attractor-head
-    parameter. Routing through the Function input list (rather than
-    register_hook) ensures DDP's per-parameter hooks fire on the head
-    parameters, which is required for them to receive valid gradients."""
-
-    @staticmethod
-    def forward(ctx, y_star_value, iftc: "_IFTContext", c, *fp_params):
-        ctx.iftc = iftc
-        ctx._n_params = len(fp_params)
-        return y_star_value
-
-    @staticmethod
-    def backward(ctx, grad_y_star):
-        iftc: _IFTContext = ctx.iftc
-        y_out, y_s, kw = iftc.y_out, iftc.y_s, iftc.bw_kwargs
-        v = grad_y_star.contiguous()
-
-        if kw["bw_type"] == "onestep":
-            # Neumann-1 approximation: u = v + J_f^T v
-            Jv, = torch.autograd.grad(y_out, y_s, v,
-                                      retain_graph=True, create_graph=False)
-            Jv = _maybe_clip_jv(Jv, v, kw["adjoint_clip"])
-            u = Jv + v
-        else:
-            def T_op(u):
-                Ju, = torch.autograd.grad(y_out, y_s, u,
-                                          retain_graph=True, create_graph=False)
-                return Ju + v
-
-            if kw["bw_type"] == "anderson":
-                with torch.no_grad():
-                    u, _ = anderson_solve(
-                        T_op, v.detach().clone(),
-                        max_iter=kw["bw_max_iter"], tol=kw["bw_tol"],
-                        m=kw["anderson_m"], beta=kw["anderson_beta"],
-                        min_iter=kw["bw_min_iter"])
-            else:
-                u = v.detach().clone()
-                for it in range(kw["bw_max_iter"]):
-                    u_new = T_op(u)
-                    diff = (u_new - u).reshape(u.size(0), -1).norm(dim=1)
-                    ref = u_new.reshape(u.size(0), -1).norm(dim=1).clamp_min(1e-9)
-                    u = u_new
-                    if (it + 1) >= kw["bw_min_iter"] and \
-                       (diff / ref).max().item() < kw["bw_tol"]:
-                        break
-
-        all_inputs = ctx.iftc._inputs_for_grad   # (c, *fp_params)
-        diff_targets = tuple(t for t in all_inputs if t.requires_grad)
-        if diff_targets and y_out.requires_grad:
-            try:
-                diff_grads = torch.autograd.grad(
-                    y_out, diff_targets, u,
-                    retain_graph=False, create_graph=False, allow_unused=True)
-            except RuntimeError as e:
-                states = ", ".join(
-                    f"{i}:rg={t.requires_grad},leaf={t.is_leaf}"
-                    for i, t in enumerate(diff_targets))
-                raise RuntimeError(
-                    f"{e}\n_IFTAttach.backward: y_out.rg="
-                    f"{y_out.requires_grad}, n_targets={len(diff_targets)}, "
-                    f"states=[{states}]") from e
-            grad_lookup = dict(zip(map(id, diff_targets), diff_grads))
-        else:
-            grad_lookup = {}
-
-        def _grad_for(t):
-            g = grad_lookup.get(id(t), None)
-            return torch.zeros_like(t) if g is None else g
-
-        c = all_inputs[0]
-        c_grad = _grad_for(c) if c.requires_grad else None
-        param_grads = tuple(_grad_for(p) for p in all_inputs[1:])
-        return (None, None, c_grad) + param_grads
+# Back-compat aliases — older callers / pickled state may reference these names.
+_IFTAttach = IFTAttach
+_IFTContext = IFTContext
 
 
 class FixedPointBlock(TransformerPreNormBlock):
@@ -381,9 +279,9 @@ class Attractor(nn.Module):
             anderson_beta=float(self.config.anderson_beta),
             adjoint_clip=self.config.adjoint_grad_clip,
         )
-        iftc = _IFTContext(y_out, y_s, bw_kwargs)
-        iftc._inputs_for_grad = (c,) + fp_params
-        return _IFTAttach.apply(y_star_nograd.detach(), iftc, c, *fp_params)
+        inputs_for_grad = (c,) + fp_params
+        iftc = IFTContext(y_out, y_s, bw_kwargs, inputs_for_grad)
+        return IFTAttach.apply(y_star_nograd.detach(), iftc, *inputs_for_grad)
 
     def _refine(self, c: Tensor, freqs_cis: Tensor,
                 attention_mask: Optional[Tensor],

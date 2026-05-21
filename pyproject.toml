@@ -6,8 +6,15 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "parcae"
-version = "0.1"
+name = "attractor-lm"
+version = "0.2.0"
+description = "Attractor language models: deep equilibrium (DEQ) transformers with optional Clifford-algebra extensions."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Jacob Fein-Ashley" },
+  { name = "Paria Rashidinejad" },
+]
 requires-python = ">= 3.11"
 dependencies = [
   "numpy<2.0",
@@ -73,16 +80,6 @@ include = [
     "receval.*",
 ]
 exclude = []
-
-[tool.setuptools.package-data]
-attractor = [
-    "LICENSE",
-    "README.md",
-]
-recpre = [
-    "LICENSE",
-    "README.md",
-]
 
 [tool.ruff]
 target-version = 'py311'

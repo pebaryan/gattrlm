@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #f4f1ea 0%, #eef4ff 100%);
+      color: #14213d;
+    }
+    .wrap { padding: 48px 56px; }
+    .card {
+      background: rgba(255,255,255,.84);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(20,33,61,.12);
+      border-radius: 24px;
+      box-shadow: 0 18px 50px rgba(20,33,61,.10);
+      padding: 28px 30px 24px;
+      max-width: 1200px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #14213d;
+      color: #fff;
+      font-size: 12px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      letter-spacing: -0.03em;
+    }
+    p {
+      margin: 0 0 20px;
+      color: #44516b;
+      font-size: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(20,33,61,.10);
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th {
+      background: #14213d;
+      color: #fff;
+      text-align: left;
+      font-size: 13px;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+    tr:nth-child(even) td { background: #f8fafc; }
+    tr:last-child td { border-bottom: none; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .notes { color: #5a647a; max-width: 360px; }
+    .config { font-weight: 700; color: #0f172a; }
+    .footer { margin-top: 16px; color: #5a647a; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="badge">llama.cpp 27B comparison</div>
+      <h1>Execution log summary</h1>
+      <p>All runs use <code>--jinja -ngl 99 -fa 1</code>. Metrics are from the final timing block in each log.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Config</th>
+            <th>Prompt tok/s</th>
+            <th>Eval tok/s</th>
+            <th>Draft accept</th>
+            <th>Total time</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="config">baseline</td><td class="num">36.90</td><td class="num">8.55</td><td class="num">N/A</td><td class="num">421.18 s</td><td class="notes">No speculative decoding; long session context</td></tr>
+          <tr><td class="config">nmax=2</td><td class="num">300.29</td><td class="num">22.28</td><td class="num">73.31%</td><td class="num">99.38 s</td><td class="notes">Best decode speed; still falls back without pipeline parallelism</td></tr>
+          <tr><td class="config">nmax=4</td><td class="num">196.08</td><td class="num">18.18</td><td class="num">74.59%</td><td class="num">106.60 s</td><td class="notes">Slower than nmax=2; smaller usable context</td></tr>
+          <tr><td class="config">nmax=2, q8_0</td><td class="num">156.88</td><td class="num">18.18</td><td class="num">74.59%</td><td class="num">106.60 s</td><td class="notes">Best stability / largest context headroom</td></tr>
+        </tbody>
+      </table>
+      <div class="footer">Best speed: nmax=2. Best stability: nmax=2, q8_0.</div>
+    </div>
+  </div>
+</body>
+</html>
